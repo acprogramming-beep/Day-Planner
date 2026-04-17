@@ -53,6 +53,7 @@ main {
     width: 100%;
     height: 100%;
     gap: 0;
+    flex-wrap: wrap;
 }
 
 .panel {
@@ -71,6 +72,38 @@ main {
 .right-panel {
     border-right: none;
     background: #f8f9ff;
+}
+
+/* Responsive layout - stack panels vertically on smaller screens */
+@media (max-width: 768px) {
+    .content-wrapper {
+        flex-direction: column;
+    }
+    
+    .panel {
+        flex: 1;
+        min-height: 50vh;
+        border-right: none;
+        border-bottom: 2px solid #eee;
+    }
+    
+    .right-panel {
+        border-bottom: none;
+    }
+    
+    /* Ensure progress bar is always visible on mobile */
+    .progress-container {
+        margin-bottom: 20px;
+        margin-top: 10px;
+        display: flex !important;
+        visibility: visible !important;
+    }
+    
+    .progress-bar {
+        display: block !important;
+        visibility: visible !important;
+        min-width: 100px; /* Ensure minimum width */
+    }
 }
 
 .progress-container {
@@ -95,27 +128,31 @@ main {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
     border-radius: 4px;
     width: 0%;
     transition: width 0.3s ease;
     position: relative;
+    z-index: 1;
 }
 
-.progress-fill::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(255,255,255,0.2) 100%);
-    animation: progress-shine 2s infinite;
+.progress-fill.slide {
+    animation: progress-slide 0.8s ease-out;
 }
 
-@keyframes progress-shine {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+@keyframes progress-slide {
+    0% { 
+        background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+        box-shadow: none;
+    }
+    50% { 
+        background: linear-gradient(90deg, #66BB6A 0%, #4CAF50 100%);
+        box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+    }
+    100% { 
+        background: linear-gradient(90deg, #4CAF50 0%, #45a049 100%);
+        box-shadow: none;
+    }
 }
 
 .progress-text {
@@ -235,6 +272,22 @@ main {
     background: #ee5a52;
 }
 
+.task-edit {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.3s;
+    margin-right: 5px;
+}
+
+.task-edit:hover {
+    background: #218838;
+}
+
 .today-tasks-container {
     list-style: none;
     flex: 1;
@@ -313,6 +366,17 @@ main {
 
 .today-task-item .task-delete:hover {
     background: #357abd;
+}
+
+.today-task-item .task-edit {
+    background: #28a745;
+    padding: 4px 8px;
+    font-size: 0.8em;
+    margin-right: 5px;
+}
+
+.today-task-item .task-edit:hover {
+    background: #218838;
 }
 
 .today-task-item input[type="checkbox"] {

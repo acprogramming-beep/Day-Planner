@@ -201,6 +201,21 @@ class DayPlanner {
         }
     }
 
+    // Edit a task
+    editTask(taskId, source) {
+        let tasks = source === 'all' ? this.allTasks : this.todayTasks;
+        let task = tasks.find(t => t.id === taskId);
+
+        if (!task) return;
+
+        const newText = prompt('Edit task:', task.text);
+        if (newText !== null && newText.trim() !== '') {
+            task.text = newText.trim();
+            this.saveData();
+            this.render();
+        }
+    }
+
     // Clear all today's tasks
     clearToday() {
         if (this.todayTasks.length === 0) {
@@ -327,16 +342,26 @@ class DayPlanner {
         const progressText = document.getElementById('progressText');
 
         if (progressFill && progressText) {
+            // Check if progress increased to trigger slide animation
+            const currentWidth = parseFloat(progressFill.style.width) || 0;
+            const newWidth = percentage;
+
+            if (newWidth > currentWidth) {
+                // Progress increased - trigger slide animation
+                progressFill.classList.remove('slide');
+                setTimeout(() => {
+                    progressFill.classList.add('slide');
+                }, 10);
+            }
+
             progressFill.style.width = `${percentage}%`;
             progressText.textContent = `${completedTasks} / ${totalTasks} tasks`;
 
             // Add visual feedback for completion
             if (percentage === 100 && totalTasks > 0) {
-                progressFill.style.background = 'linear-gradient(90deg, #4CAF50 0%, #45a049 100%)';
                 progressText.style.color = '#4CAF50';
                 progressText.style.fontWeight = '600';
             } else {
-                progressFill.style.background = 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)';
                 progressText.style.color = '#666';
                 progressText.style.fontWeight = '500';
             }
@@ -354,6 +379,7 @@ class DayPlanner {
                     onchange="event.stopPropagation(); planner.toggleTask(${task.id}, '${source}')"
                 >
                 <span class="task-text">${this.escapeHtml(task.text)}</span>
+                <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, '${source}')" title="Edit task">Edit</button>
                 <button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, '${source}')">Delete</button>
             </li>
         `;
@@ -371,6 +397,7 @@ class DayPlanner {
                 onchange="event.stopPropagation(); planner.toggleTask(${task.id}, 'today')"
             >
             <span class="task-text">${this.escapeHtml(task.text)}</span>
+            <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, 'today')" title="Edit task">Edit</button>
             ${moveBackButton}
         `;
     }
