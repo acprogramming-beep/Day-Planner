@@ -14,6 +14,70 @@ class DayPlanner {
         this.setupEventListeners();
         this.updateCurrentDate();
         this.render();
+        this.updateProgress();
+        this.setupAutoClear();
+    }
+
+    // Setup automatic daily clearing
+    setupAutoClear() {
+        // Check every 5 minutes if it's a new day
+        setInterval(() => {
+            this.checkAndResetDaily();
+        }, 5 * 60 * 1000); // 5 minutes
+
+        // Also set up a timeout for exactly when the day changes
+        this.scheduleMidnightReset();
+    }
+
+    // Schedule a reset at exactly midnight
+    scheduleMidnightReset() {
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setHours(24, 0, 0, 0); // Next midnight
+
+        const timeUntilMidnight = midnight.getTime() - now.getTime();
+
+        // Set timeout for exactly when the day changes
+        setTimeout(() => {
+            this.performDailyReset();
+            // Schedule the next midnight reset
+            this.scheduleMidnightReset();
+        }, timeUntilMidnight);
+    }
+
+    // Perform the daily reset (separate from checkAndResetDaily for clarity)
+    performDailyReset() {
+        const todayTasks = [...this.todayTasks];
+        const unfinishedTasks = todayTasks.filter(task => !task.completed);
+
+        // Move unfinished tasks back to main list
+        unfinishedTasks.forEach(task => {
+            task.completed = false; // Reset completion status
+            this.allTasks.push(task);
+        });
+
+        // Clear today's tasks
+        this.todayTasks = [];
+
+        // Update storage
+        this.saveData();
+
+        // Update UI
+        this.render();
+        this.updateProgress();
+
+        // Show notification if app is visible
+        if (document.visibilityState === 'visible') {
+            this.showResetNotification(unfinishedTasks.length);
+        }
+
+        console.log(`Daily reset completed: ${unfinishedTasks.length} unfinished tasks moved back to checklist`);
+    }
+
+    // Load data from localStorage
+    loadData() {
+        this.allTasks = JSON.parse(localStorage.getItem('allTasks') || '[]');
+        this.todayTasks = JSON.parse(localStorage.getItem('todayTasks') || '[]');
     }
 
     // Check if we need to reset daily tasks (new day detected)
@@ -22,26 +86,36 @@ class DayPlanner {
         const currentDate = new Date().toDateString();
 
         if (lastDate !== currentDate) {
-            // New day detected - move unfinished tasks from today back to all tasks
-            const todayTasks = JSON.parse(localStorage.getItem('todayTasks') || '[]');
-            const allTasks = JSON.parse(localStorage.getItem('allTasks') || '[]');
-
-            todayTasks.forEach(task => {
-                if (!task.completed) {
-                    allTasks.push(task);
-                }
-            });
-
-            localStorage.setItem('allTasks', JSON.stringify(allTasks));
-            localStorage.setItem('todayTasks', JSON.stringify([]));
+            // New day detected - perform reset
+            this.performDailyReset();
             localStorage.setItem('lastDate', currentDate);
         }
     }
 
-    // Load data from localStorage
-    loadData() {
-        this.allTasks = JSON.parse(localStorage.getItem('allTasks') || '[]');
-        this.todayTasks = JSON.parse(localStorage.getItem('todayTasks') || '[]');
+    // Show notification when daily reset occurs
+    showResetNotification(unfinishedCount) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'reset-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <span class="notification-icon">🌅</span>
+                <span class="notification-text">
+                    New day started! ${unfinishedCount} unfinished task${unfinishedCount !== 1 ? 's' : ''} moved back to your checklist.
+                </span>
+                <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+
+        // Add to page
+        document.body.appendChild(notification);
+
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 5000);
     }
 
     // Save data to localStorage
@@ -64,9 +138,7 @@ class DayPlanner {
 
         clearTodayBtn.addEventListener('click', () => this.clearToday());
 
-        // Drag and drop setup
-        document.addEventListener('dragstart', (e) => this.handleDragStart(e));
-        document.addEventListener('dragend', (e) => this.handleDragEnd(e));
+        // Drag and drop setup (drop zone listeners only)
         document.addEventListener('dragover', (e) => this.handleDragOver(e));
         document.addEventListener('drop', (e) => this.handleDrop(e));
         document.addEventListener('dragleave', (e) => this.handleDragLeave(e));
@@ -97,12 +169,20 @@ class DayPlanner {
         input.focus();
     }
 
-    // Delete a task
+    // Delete a task (or move back to checklist)
     deleteTask(taskId, source) {
         if (source === 'all') {
+            // Delete completely from main checklist
             this.allTasks = this.allTasks.filter(t => t.id !== taskId);
         } else if (source === 'today') {
-            this.todayTasks = this.todayTasks.filter(t => t.id !== taskId);
+            // Move back to main checklist (not delete)
+            const task = this.todayTasks.find(t => t.id === taskId);
+            if (task) {
+                // Reset completion status when moving back
+                task.completed = false;
+                this.allTasks.push(task);
+                this.todayTasks = this.todayTasks.filter(t => t.id !== taskId);
+            }
         }
 
         this.saveData();
@@ -143,15 +223,17 @@ class DayPlanner {
 
     // Drag and drop handlers
     handleDragStart(e) {
-        // Don't start drag if clicking on interactive elements (buttons, checkboxes)
-        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') {
+        // Don't start drag if clicking on or inside interactive elements (buttons, checkboxes)
+        const interactiveElement = e.target.closest('button, input');
+        if (interactiveElement) {
             e.preventDefault();
+            e.stopPropagation();
             return;
         }
 
-        if (!e.target.classList.contains('task-item') && !e.target.closest('.task-item')) return;
+        const taskItem = e.target.closest('.task-item');
+        if (!taskItem) return;
 
-        const taskItem = e.target.classList.contains('task-item') ? e.target : e.target.closest('.task-item');
         taskItem.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('taskId', taskItem.dataset.taskId);
@@ -160,9 +242,10 @@ class DayPlanner {
 
     handleDragEnd(e) {
         // Don't handle drag end if it was prevented
-        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+        const interactiveElement = e.target.closest('button, input');
+        if (interactiveElement) return;
 
-        const taskItem = e.target.classList.contains('task-item') ? e.target : e.target.closest('.task-item');
+        const taskItem = e.target.closest('.task-item');
         if (taskItem) {
             taskItem.classList.remove('dragging');
         }
@@ -233,11 +316,38 @@ class DayPlanner {
         dateElement.textContent = formattedDate;
     }
 
+    // Update progress bar for today's tasks
+    updateProgress() {
+        const totalTasks = this.todayTasks.length;
+        const completedTasks = this.todayTasks.filter(task => task.completed).length;
+        const percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+        // Update progress bar
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        if (progressFill && progressText) {
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = `${completedTasks} / ${totalTasks} tasks`;
+
+            // Add visual feedback for completion
+            if (percentage === 100 && totalTasks > 0) {
+                progressFill.style.background = 'linear-gradient(90deg, #4CAF50 0%, #45a049 100%)';
+                progressText.style.color = '#4CAF50';
+                progressText.style.fontWeight = '600';
+            } else {
+                progressFill.style.background = 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)';
+                progressText.style.color = '#666';
+                progressText.style.fontWeight = '500';
+            }
+        }
+    }
+
     // Create task item HTML
     createTaskItemHTML(task, source) {
         const completed = task.completed ? 'completed' : '';
         return `
-            <li class="task-item ${completed}" draggable="true" data-task-id="${task.id}" data-source="${source}">
+            <li class="task-item ${completed}" draggable="true" data-task-id="${task.id}" data-source="${source}" ondragstart="planner.handleDragStart(event)" ondragend="planner.handleDragEnd(event)">
                 <input
                     type="checkbox"
                     ${task.completed ? 'checked' : ''}
@@ -252,6 +362,8 @@ class DayPlanner {
     // Create today's task HTML (inner content)
     createTodayTaskItemHTML(task) {
         const completed = task.completed ? 'completed' : '';
+        const moveBackButton = task.completed ? '' : `<button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, 'today')" title="Move back to checklist">←</button>`;
+
         return `
             <input
                 type="checkbox"
@@ -259,7 +371,7 @@ class DayPlanner {
                 onchange="event.stopPropagation(); planner.toggleTask(${task.id}, 'today')"
             >
             <span class="task-text">${this.escapeHtml(task.text)}</span>
-            <button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, 'today')">Delete</button>
+            ${moveBackButton}
         `;
     }
 
@@ -274,6 +386,7 @@ class DayPlanner {
     render() {
         this.renderTaskList();
         this.renderTodayTasks();
+        this.updateProgress();
     }
 
     // Render all tasks list
@@ -316,6 +429,8 @@ class DayPlanner {
                 li.draggable = true;
                 li.dataset.taskId = task.id;
                 li.dataset.source = 'today';
+                li.setAttribute('ondragstart', 'planner.handleDragStart(event)');
+                li.setAttribute('ondragend', 'planner.handleDragEnd(event)');
                 li.innerHTML = this.createTodayTaskItemHTML(task);
                 
                 todayContainer.appendChild(li);

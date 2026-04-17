@@ -48,15 +48,11 @@ A simple, elegant day-planner web application that helps you manage your to-do l
 ✨ **Core Features:**
 - **To-Do List Checklist**: Maintain a complete list of all tasks you need to accomplish
 - **Daily Task Planning**: Drag tasks from your to-do list to a dedicated "Today's Tasks" section
+- **Progress Tracking**: Visual progress bar showing completed vs total tasks in "Today's Tasks"
+- **Automatic Daily Reset**: Unfinished tasks automatically move back to checklist at midnight
 - **Persistent Storage**: All tasks are saved automatically using browser localStorage
 - **Daily Reset**: Unfinished tasks automatically return to your to-do list at the start of each day
-- **Task Management**: 
-  - Mark tasks as complete with checkboxes
-  - Delete tasks from either list
-  - Add new tasks with keyboard (Enter key) or button click
-- **Intuitive Drag & Drop**: Simple click-and-drag interface to move tasks between lists
-
-## How to Use
+- **Task Management**:
 
 ### Getting Started
 1. Access your deployed app URL (e.g., `https://yourusername.github.io/day-planner`)
@@ -108,20 +104,23 @@ Once you open the app once in Safari on iPad, it caches everything locally. You 
 1. **Drag tasks** from the left "To-Do List" panel to the right "Today's Tasks" panel
 2. Focus on completing the tasks in "Today's Tasks"
 3. As you finish tasks, check the checkbox to mark them complete
+4. **Watch your progress** with the visual progress bar at the top of "Today's Tasks"
 
 ### Completing Tasks
 - Click the **checkbox** next to any task to mark it as complete
 - Completed tasks appear dimmed with strikethrough text
-- You can still delete completed tasks or uncheck them if needed
+- **Move-back button (←) disappears** for completed tasks since they're done
+- You can still uncheck completed tasks to show the move-back button again
 
 ### End of Day
-- **Finished tasks**: These can be deleted to clean up
-- **Unfinished tasks in Today's Tasks**: Click "Clear Today" to automatically move all unfinished tasks back to your To-Do List
-- The next day, all unfinished tasks will be available in your To-Do List again
+- **Automatic Clearing:** At midnight, unfinished tasks automatically move back to your To-Do List
+- **Manual Clearing:** Click "Clear Today" to manually move unfinished tasks back anytime
+- **Notification:** Get notified when the daily reset occurs (if app is open)
+- **Finished tasks:** These can be deleted from the main checklist if no longer needed
 
 ### Deleting Tasks
-- Click the **Delete** button next to any task to remove it completely
-- This action is permanent
+- **From "To-Do List":** Click the **Delete** button to remove the task completely
+- **From "Today's Tasks":** Click the **←** button to move unfinished tasks back to your main checklist (button only appears for incomplete tasks)
 
 ## Technical Details
 
@@ -136,6 +135,8 @@ Once you open the app once in Safari on iPad, it caches everything locally. You 
 ### How It Works
 - **Storage**: Uses browser localStorage to persist data
 - **Daily Reset**: Automatically detects new days and moves unfinished tasks from "Today's Tasks" back to "To-Do List"
+- **Automatic Clearing**: Runs at exactly midnight every day, even if app is open
+- **Progress Tracking**: Real-time calculation of completion percentage for today's tasks
 - **Drag & Drop**: Uses HTML5 Drag and Drop API for smooth task movement
 - **Responsive Design**: Works on desktop and mobile devices
 - **Offline Support**: Service worker caches the app for offline functionality

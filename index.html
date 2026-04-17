@@ -36,6 +36,12 @@
                 <!-- Right Panel: Today's Tasks -->
                 <section class="panel right-panel">
                     <h2>Today's Tasks</h2>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="progress-text" id="progressText">0 / 0 tasks</span>
+                    </div>
                     <ul id="todayTasks" class="today-tasks-container" data-type="today"></ul>
                     <div class="actions">
                         <button id="clearTodayBtn" class="btn-danger">Clear Today</button>
