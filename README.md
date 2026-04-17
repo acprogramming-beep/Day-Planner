@@ -2,6 +2,47 @@
 
 A simple, elegant day-planner web application that helps you manage your to-do list and plan your daily tasks with drag-and-drop functionality.
 
+**🔒 Security Note:** This app is designed for personal use. Users can add/edit their own tasks (stored locally in their browser), but only you control the source code and deployment. See the Security section below for details.
+
+## 🔒 Security & Access Control
+
+### Protecting Your App Source Code
+
+**Important:** The app is designed so users can **use** it (add/edit their own tasks), but you control who can **edit** the source code.
+
+#### If You Deployed to GitHub Pages:
+1. **Make Repository Private:**
+   - Go to your repository on GitHub
+   - Settings → Danger Zone → Make private
+   - Only you (and invited collaborators) can see/edit the code
+
+2. **Add Collaborators (Optional):**
+   - Settings → Collaborators → Add people
+   - Set appropriate permissions (read/write/admin)
+
+#### If You Deployed to Netlify/Vercel:
+- **Your account controls everything** - only you can redeploy
+- Others can only access the live site, not edit the source
+- To share editing access: invite them to your Netlify/Vercel account
+
+### User Data Privacy
+- **Tasks are stored locally** in each user's browser (localStorage)
+- **No data is sent to your server** - completely private
+- **Each user sees only their own tasks**
+- **Data stays on their device** - works offline
+
+### What Users Can/Cannot Do
+✅ **Users CAN:**
+- Add, edit, delete their own tasks
+- Use the app on any device
+- Access it offline (after first load)
+
+❌ **Users CANNOT:**
+- Edit your source code
+- See other users' tasks
+- Modify the app functionality
+- Access your deployment settings
+
 ## Features
 
 ✨ **Core Features:**
@@ -18,8 +59,9 @@ A simple, elegant day-planner web application that helps you manage your to-do l
 ## How to Use
 
 ### Getting Started
-1. Open `index.html` in your web browser
+1. Access your deployed app URL (e.g., `https://yourusername.github.io/day-planner`)
 2. The app will load your saved tasks or start fresh if this is your first time
+3. **For offline use**: Open the app once while online, then it works completely offline
 
 ### 📱 Access on iPad (or any Device on Your Network)
 
@@ -29,32 +71,33 @@ The app is now a **Progressive Web App (PWA)** that works completely offline. De
 
 **Deploy to GitHub Pages (5 minutes):**
 1. Create a GitHub account at [github.com](https://github.com)
-2. Fork or create a new repository named `day-planner`
+2. **Create a PRIVATE repository** named `day-planner` (Settings → Danger Zone → Make private)
 3. Upload all files to the repository
 4. Go to **Settings** → **Pages** → Select `main` branch
 5. Access your app at `https://yourusername.github.io/day-planner`
 6. On iPad: bookmark this link and add to home screen!
+7. **Only you can edit the code** - others can only use the live app
 
 **Deploy to Netlify (5 minutes):**
 1. Go to [netlify.com](https://netlify.com)
 2. Drag and drop the folder containing all the files
 3. Get a live URL instantly
 4. On iPad: bookmark and add to home screen!
+5. **Only your Netlify account can redeploy** - others can only use the app
 
 **Deploy to Vercel (5 minutes):**
 1. Go to [vercel.com](https://vercel.com)
 2. Connect your GitHub or upload files
 3. Deploy with one click
 4. Access from anywhere!
+5. **Account-based security** - only you can modify deployments
 
-#### **Option 2: Local Server (Computer Must Stay On)**
-If you prefer to run locally, see the "Server Setup" section below.
-
-#### **Option 3: No Deployment - Just Use Offline**
+#### **Option 2: No Deployment - Just Use Offline**
 Once you open the app once in Safari on iPad, it caches everything locally. You can then:
 1. Use it completely offline
 2. Data persists on that device
 3. Add to home screen for quick access
+4. **Completely private** - no one else can access your data
 
 ### Adding Tasks
 1. Type a task description in the "Add a new task..." input field
@@ -110,50 +153,6 @@ Once you open the app once in Safari on iPad, it caches everything locally. You 
 2. **Realistic Goals**: Only drag tasks you can realistically complete today
 3. **Regular Cleanup**: Delete completed tasks to keep your list manageable
 4. **Clear at Day's End**: Use "Clear Today" at the end of your day to reset for tomorrow
-
-## Server Setup (Optional - For Local Network Only)
-
-**⚠️ Note:** You don't need this if you deployed to the cloud (see iPad access section above).
-
-Only use the local server if you want to run the app only on your home WiFi network while your computer is on.
-
-### Files Included:
-- **`server.py`** - Python HTTP server script
-- **`start-server.bat`** - Windows batch file to easily start the server
-
-### Running the Server:
-
-**Windows (Easiest):**
-1. Double-click `start-server.bat`
-2. Your computer's network IP will be displayed
-3. Open the shown URL on any device on your WiFi
-
-**Mac/Linux/Manual:**
-```bash
-python3 server.py
-```
-
-### Requirements:
-- Python 3.x installed (download from [python.org](https://www.python.org/))
-- Connected to WiFi
-- Other devices on the same network
-
-### Troubleshooting:
-
-**"Python is not installed"**
-- Install Python from https://www.python.org/
-- During installation, check "Add Python to PATH"
-
-**Can't connect from iPad**
-- Verify iPad is on the same WiFi network
-- Check your computer's IP address (shown in server output)
-- Make sure Windows Firewall isn't blocking the connection
-- Try `http://192.168.x.x:8000` format
-
-**Server won't start**
-- Try running as Administrator
-- Make sure port 8000 isn't already in use
-- Check that you're in the correct folder
 
 ## Future Enhancement Ideas
 

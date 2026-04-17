@@ -143,17 +143,28 @@ class DayPlanner {
 
     // Drag and drop handlers
     handleDragStart(e) {
-        if (!e.target.classList.contains('task-item')) return;
+        // Don't start drag if clicking on interactive elements (buttons, checkboxes)
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') {
+            e.preventDefault();
+            return;
+        }
 
-        e.target.classList.add('dragging');
+        if (!e.target.classList.contains('task-item') && !e.target.closest('.task-item')) return;
+
+        const taskItem = e.target.classList.contains('task-item') ? e.target : e.target.closest('.task-item');
+        taskItem.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('taskId', e.target.dataset.taskId);
-        e.dataTransfer.setData('source', e.target.dataset.source);
+        e.dataTransfer.setData('taskId', taskItem.dataset.taskId);
+        e.dataTransfer.setData('source', taskItem.dataset.source);
     }
 
     handleDragEnd(e) {
-        if (e.target.classList.contains('task-item')) {
-            e.target.classList.remove('dragging');
+        // Don't handle drag end if it was prevented
+        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+
+        const taskItem = e.target.classList.contains('task-item') ? e.target : e.target.closest('.task-item');
+        if (taskItem) {
+            taskItem.classList.remove('dragging');
         }
         document.getElementById('todayTasks').classList.remove('drag-over');
     }
@@ -227,13 +238,13 @@ class DayPlanner {
         const completed = task.completed ? 'completed' : '';
         return `
             <li class="task-item ${completed}" draggable="true" data-task-id="${task.id}" data-source="${source}">
-                <input 
-                    type="checkbox" 
+                <input
+                    type="checkbox"
                     ${task.completed ? 'checked' : ''}
-                    onchange="planner.toggleTask(${task.id}, '${source}')"
+                    onchange="event.stopPropagation(); planner.toggleTask(${task.id}, '${source}')"
                 >
                 <span class="task-text">${this.escapeHtml(task.text)}</span>
-                <button class="task-delete" onclick="planner.deleteTask(${task.id}, '${source}')">Delete</button>
+                <button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, '${source}')">Delete</button>
             </li>
         `;
     }
@@ -242,13 +253,13 @@ class DayPlanner {
     createTodayTaskItemHTML(task) {
         const completed = task.completed ? 'completed' : '';
         return `
-            <input 
-                type="checkbox" 
+            <input
+                type="checkbox"
                 ${task.completed ? 'checked' : ''}
-                onchange="planner.toggleTask(${task.id}, 'today')"
+                onchange="event.stopPropagation(); planner.toggleTask(${task.id}, 'today')"
             >
             <span class="task-text">${this.escapeHtml(task.text)}</span>
-            <button class="task-delete" onclick="planner.deleteTask(${task.id}, 'today')">Delete</button>
+            <button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, 'today')">Delete</button>
         `;
     }
 
