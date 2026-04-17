@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day Planner</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <meta name="description" content="A simple day planner app to manage your to-do list and daily tasks">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📅 Day Planner</h1>
+            <p id="currentDate"></p>
+        </header>
+
+        <main>
+            <div class="content-wrapper">
+                <!-- Left Panel: To-Do Checklist -->
+                <section class="panel left-panel">
+                    <h2>To-Do List</h2>
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="taskInput" 
+                            placeholder="Add a new task..."
+                            autocomplete="off"
+                        >
+                        <button id="addTaskBtn">Add</button>
+                    </div>
+                    <ul id="taskList" class="task-list"></ul>
+                </section>
+
+                <!-- Right Panel: Today's Tasks -->
+                <section class="panel right-panel">
+                    <h2>Today's Tasks</h2>
+                    <ul id="todayTasks" class="today-tasks-container" data-type="today"></ul>
+                    <div class="actions">
+                        <button id="clearTodayBtn" class="btn-danger">Clear Today</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <p>Tasks persist and reset daily • Drag items between lists</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Register Service Worker for offline support
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js').then((registration) => {
+                console.log('Service Worker registered successfully:', registration);
+            }).catch((error) => {
+                console.log('Service Worker registration failed:', error);
+            });
+        }
+    </script>
+</body>
+</html>
