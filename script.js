@@ -118,6 +118,22 @@ class DayPlanner {
         return diffDays <= 3 && diffDays >= 0;
     }
 
+    // Get deadline state class
+    getDeadlineState(deadline) {
+        if (!deadline) return '';
+        const now = new Date();
+        const dueDate = new Date(deadline);
+        const diffTime = dueDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return 'overdue';
+        if (diffDays === 0) return 'due-today';
+        if (diffDays === 1) return 'due-tomorrow';
+        if (diffDays <= 3) return 'due-soon';
+        if (diffDays <= 7) return 'due-week';
+        return 'due-future';
+    }
+
     // Check if task is overdue
     isOverdue(deadline) {
         if (!deadline) return false;
@@ -204,9 +220,9 @@ class DayPlanner {
     // Add a new task
     addTask() {
         const input = document.getElementById('taskInput');
+        const deadlineInput = document.getElementById('deadlineInput');
         const text = input.value.trim();
-        // const deadlineInput = document.getElementById('deadlineInput');
-        // const deadline = deadlineInput ? deadlineInput.value : null;
+        const deadline = deadlineInput ? deadlineInput.value : null;
 
         if (text === '') {
             alert('Please enter a task!');
@@ -217,7 +233,7 @@ class DayPlanner {
             id: Date.now(),
             text: text,
             completed: false,
-            deadline: null, // deadline || null,
+            deadline: deadline || null,
             createdAt: new Date().toISOString()
         };
 
@@ -226,7 +242,7 @@ class DayPlanner {
         this.render();
 
         input.value = '';
-        // if (deadlineInput) deadlineInput.value = '';
+        if (deadlineInput) deadlineInput.value = '';
         input.focus();
     }
 
@@ -299,11 +315,11 @@ class DayPlanner {
             task.text = newText.trim();
             
             // Also allow editing deadline
-            // const currentDeadline = task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '';
-            // const newDeadline = prompt('Edit deadline (YYYY-MM-DD) or leave empty:', currentDeadline);
-            // if (newDeadline !== null) {
-            //     task.deadline = newDeadline.trim() || null;
-            // }
+            const currentDeadline = task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '';
+            const newDeadline = prompt('Edit deadline (YYYY-MM-DD) or leave empty:', currentDeadline);
+            if (newDeadline !== null) {
+                task.deadline = newDeadline.trim() || null;
+            }
             
             this.saveData();
             this.render();
@@ -539,18 +555,17 @@ class DayPlanner {
     // Create task item HTML
     createTaskItemHTML(task, source) {
         const completed = task.completed ? 'completed' : '';
-        // const dueSoon = this.isDueSoon(task.deadline) ? 'due-soon' : '';
-        // const overdue = this.isOverdue(task.deadline) ? 'overdue' : '';
-        // const deadlineText = task.deadline ? ` (Due: ${new Date(task.deadline).toLocaleDateString()})` : '';
+        const deadlineState = this.getDeadlineState(task.deadline);
+        const deadlineText = task.deadline ? ` (Due: ${new Date(task.deadline).toLocaleDateString()})` : '';
         
         return `
-            <li class="task-item ${completed}" draggable="true" data-task-id="${task.id}" data-source="${source}" ondragstart="planner.handleDragStart(event)" ondragend="planner.handleDragEnd(event)">
+            <li class="task-item ${completed} ${deadlineState}" draggable="true" data-task-id="${task.id}" data-source="${source}" ondragstart="planner.handleDragStart(event)" ondragend="planner.handleDragEnd(event)">
                 <input
                     type="checkbox"
                     ${task.completed ? 'checked' : ''}
                     onchange="event.stopPropagation(); planner.toggleTask(${task.id}, '${source}')"
                 >
-                <span class="task-text">${this.escapeHtml(task.text)}</span>
+                <span class="task-text">${this.escapeHtml(task.text)}${deadlineText}</span>
                 <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, '${source}')" title="Edit task">Edit</button>
                 <button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, '${source}')">Delete</button>
             </li>
@@ -560,9 +575,8 @@ class DayPlanner {
     // Create today's task HTML (inner content)
     createTodayTaskItemHTML(task, source = 'today') {
         const completed = task.completed ? 'completed' : '';
-        // const dueSoon = this.isDueSoon(task.deadline) ? 'due-soon' : '';
-        // const overdue = this.isOverdue(task.deadline) ? 'overdue' : '';
-        // const deadlineText = task.deadline ? ` (Due: ${new Date(task.deadline).toLocaleDateString()})` : '';
+        const deadlineState = this.getDeadlineState(task.deadline);
+        const deadlineText = task.deadline ? ` (Due: ${new Date(task.deadline).toLocaleDateString()})` : '';
         const moveBackButton = task.completed ? '' : `<button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, '${source}')" title="Move back to checklist">←</button>`;
 
         return `
@@ -571,7 +585,7 @@ class DayPlanner {
                 ${task.completed ? 'checked' : ''}
                 onchange="event.stopPropagation(); planner.toggleTask(${task.id}, '${source}')"
             >
-            <span class="task-text">${this.escapeHtml(task.text)}</span>
+            <span class="task-text">${this.escapeHtml(task.text)}${deadlineText}</span>
             <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, '${source}')" title="Edit task">Edit</button>
             ${moveBackButton}
         `;
@@ -645,9 +659,8 @@ class DayPlanner {
             tasks.forEach(task => {
                 const li = document.createElement('li');
                 const completed = task.completed ? 'completed' : '';
-                // const dueSoon = this.isDueSoon(task.deadline) ? 'due-soon' : '';
-                // const overdue = this.isOverdue(task.deadline) ? 'overdue' : '';
-                li.className = `today-task-item ${completed}`;
+                const deadlineState = this.getDeadlineState(task.deadline);
+                li.className = `today-task-item ${completed} ${deadlineState}`;
                 li.draggable = true;
                 li.dataset.taskId = task.id;
                 li.dataset.source = source;
