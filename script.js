@@ -3,7 +3,9 @@
 class DayPlanner {
     constructor() {
         this.allTasks = [];
-        this.todayTasks = [];
+        this.morningTasks = [];
+        this.afternoonTasks = [];
+        this.nightTasks = [];
         this.currentDate = new Date().toDateString();
         this.init();
     }
@@ -16,6 +18,15 @@ class DayPlanner {
         this.render();
         this.updateProgress();
         this.setupAutoClear();
+    }
+
+    // Check if it's a new day and reset if needed
+    checkAndResetDaily() {
+        const today = new Date().toDateString();
+        if (this.currentDate !== today) {
+            this.performDailyReset();
+            this.currentDate = today;
+        }
     }
 
     // Setup automatic daily clearing
@@ -47,8 +58,8 @@ class DayPlanner {
 
     // Perform the daily reset (separate from checkAndResetDaily for clarity)
     performDailyReset() {
-        const todayTasks = [...this.todayTasks];
-        const unfinishedTasks = todayTasks.filter(task => !task.completed);
+        const allTodayTasks = [...this.morningTasks, ...this.afternoonTasks, ...this.nightTasks];
+        const unfinishedTasks = allTodayTasks.filter(task => !task.completed);
 
         // Move unfinished tasks back to main list
         unfinishedTasks.forEach(task => {
@@ -56,8 +67,10 @@ class DayPlanner {
             this.allTasks.push(task);
         });
 
-        // Clear today's tasks
-        this.todayTasks = [];
+        // Clear all today's tasks
+        this.morningTasks = [];
+        this.afternoonTasks = [];
+        this.nightTasks = [];
 
         // Update storage
         this.saveData();
@@ -77,19 +90,57 @@ class DayPlanner {
     // Load data from localStorage
     loadData() {
         this.allTasks = JSON.parse(localStorage.getItem('allTasks') || '[]');
-        this.todayTasks = JSON.parse(localStorage.getItem('todayTasks') || '[]');
+        this.morningTasks = JSON.parse(localStorage.getItem('morningTasks') || '[]');
+        this.afternoonTasks = JSON.parse(localStorage.getItem('afternoonTasks') || '[]');
+        this.nightTasks = JSON.parse(localStorage.getItem('nightTasks') || '[]');
+        
+        // Migrate old data if exists
+        const oldTodayTasks = JSON.parse(localStorage.getItem('todayTasks') || '[]');
+        if (oldTodayTasks.length > 0 && this.morningTasks.length === 0 && this.afternoonTasks.length === 0 && this.nightTasks.length === 0) {
+            // Distribute old tasks evenly across time slots
+            oldTodayTasks.forEach((task, index) => {
+                if (index % 3 === 0) this.morningTasks.push(task);
+                else if (index % 3 === 1) this.afternoonTasks.push(task);
+                else this.nightTasks.push(task);
+            });
+            this.saveData();
+            localStorage.removeItem('todayTasks'); // Clean up old data
+        }
     }
 
-    // Check if we need to reset daily tasks (new day detected)
-    checkAndResetDaily() {
-        const lastDate = localStorage.getItem('lastDate');
-        const currentDate = new Date().toDateString();
+    // Check if task is due within 3 days
+    isDueSoon(deadline) {
+        if (!deadline) return false;
+        const now = new Date();
+        const dueDate = new Date(deadline);
+        const diffTime = dueDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 3 && diffDays >= 0;
+    }
 
-        if (lastDate !== currentDate) {
-            // New day detected - perform reset
-            this.performDailyReset();
-            localStorage.setItem('lastDate', currentDate);
-        }
+    // Check if task is overdue
+    isOverdue(deadline) {
+        if (!deadline) return false;
+        const now = new Date();
+        const dueDate = new Date(deadline);
+        return dueDate < now;
+    }
+
+    // Check if task is overdue
+    isOverdue(deadline) {
+        if (!deadline) return false;
+        const now = new Date();
+        const dueDate = new Date(deadline);
+        return dueDate < now;
+    }
+
+    // Get task list array by source name
+    getTaskList(source) {
+        if (source === 'all') return this.allTasks;
+        if (source === 'morning') return this.morningTasks;
+        if (source === 'afternoon') return this.afternoonTasks;
+        if (source === 'night') return this.nightTasks;
+        return [];
     }
 
     // Show notification when daily reset occurs
@@ -121,7 +172,9 @@ class DayPlanner {
     // Save data to localStorage
     saveData() {
         localStorage.setItem('allTasks', JSON.stringify(this.allTasks));
-        localStorage.setItem('todayTasks', JSON.stringify(this.todayTasks));
+        localStorage.setItem('morningTasks', JSON.stringify(this.morningTasks));
+        localStorage.setItem('afternoonTasks', JSON.stringify(this.afternoonTasks));
+        localStorage.setItem('nightTasks', JSON.stringify(this.nightTasks));
     }
 
     // Setup all event listeners
@@ -129,7 +182,11 @@ class DayPlanner {
         const addBtn = document.getElementById('addTaskBtn');
         const taskInput = document.getElementById('taskInput');
         const clearTodayBtn = document.getElementById('clearTodayBtn');
-        const todayContainer = document.getElementById('todayTasks');
+        
+        // Time slot containers for drag and drop
+        const morningContainer = document.getElementById('morningTasks');
+        const afternoonContainer = document.getElementById('afternoonTasks');
+        const nightContainer = document.getElementById('nightTasks');
 
         addBtn.addEventListener('click', () => this.addTask());
         taskInput.addEventListener('keypress', (e) => {
@@ -148,6 +205,8 @@ class DayPlanner {
     addTask() {
         const input = document.getElementById('taskInput');
         const text = input.value.trim();
+        // const deadlineInput = document.getElementById('deadlineInput');
+        // const deadline = deadlineInput ? deadlineInput.value : null;
 
         if (text === '') {
             alert('Please enter a task!');
@@ -158,6 +217,7 @@ class DayPlanner {
             id: Date.now(),
             text: text,
             completed: false,
+            deadline: null, // deadline || null,
             createdAt: new Date().toISOString()
         };
 
@@ -166,6 +226,7 @@ class DayPlanner {
         this.render();
 
         input.value = '';
+        // if (deadlineInput) deadlineInput.value = '';
         input.focus();
     }
 
@@ -174,14 +235,29 @@ class DayPlanner {
         if (source === 'all') {
             // Delete completely from main checklist
             this.allTasks = this.allTasks.filter(t => t.id !== taskId);
-        } else if (source === 'today') {
+        } else if (source === 'morning') {
             // Move back to main checklist (not delete)
-            const task = this.todayTasks.find(t => t.id === taskId);
+            const task = this.morningTasks.find(t => t.id === taskId);
             if (task) {
-                // Reset completion status when moving back
                 task.completed = false;
                 this.allTasks.push(task);
-                this.todayTasks = this.todayTasks.filter(t => t.id !== taskId);
+                this.morningTasks = this.morningTasks.filter(t => t.id !== taskId);
+            }
+        } else if (source === 'afternoon') {
+            // Move back to main checklist (not delete)
+            const task = this.afternoonTasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = false;
+                this.allTasks.push(task);
+                this.afternoonTasks = this.afternoonTasks.filter(t => t.id !== taskId);
+            }
+        } else if (source === 'night') {
+            // Move back to main checklist (not delete)
+            const task = this.nightTasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = false;
+                this.allTasks.push(task);
+                this.nightTasks = this.nightTasks.filter(t => t.id !== taskId);
             }
         }
 
@@ -191,7 +267,12 @@ class DayPlanner {
 
     // Toggle task completion
     toggleTask(taskId, source) {
-        let tasks = source === 'all' ? this.allTasks : this.todayTasks;
+        let tasks;
+        if (source === 'all') tasks = this.allTasks;
+        else if (source === 'morning') tasks = this.morningTasks;
+        else if (source === 'afternoon') tasks = this.afternoonTasks;
+        else if (source === 'night') tasks = this.nightTasks;
+        
         let task = tasks.find(t => t.id === taskId);
 
         if (task) {
@@ -203,7 +284,12 @@ class DayPlanner {
 
     // Edit a task
     editTask(taskId, source) {
-        let tasks = source === 'all' ? this.allTasks : this.todayTasks;
+        let tasks;
+        if (source === 'all') tasks = this.allTasks;
+        else if (source === 'morning') tasks = this.morningTasks;
+        else if (source === 'afternoon') tasks = this.afternoonTasks;
+        else if (source === 'night') tasks = this.nightTasks;
+        
         let task = tasks.find(t => t.id === taskId);
 
         if (!task) return;
@@ -211,6 +297,14 @@ class DayPlanner {
         const newText = prompt('Edit task:', task.text);
         if (newText !== null && newText.trim() !== '') {
             task.text = newText.trim();
+            
+            // Also allow editing deadline
+            // const currentDeadline = task.deadline ? new Date(task.deadline).toISOString().split('T')[0] : '';
+            // const newDeadline = prompt('Edit deadline (YYYY-MM-DD) or leave empty:', currentDeadline);
+            // if (newDeadline !== null) {
+            //     task.deadline = newDeadline.trim() || null;
+            // }
+            
             this.saveData();
             this.render();
         }
@@ -218,19 +312,31 @@ class DayPlanner {
 
     // Clear all today's tasks
     clearToday() {
-        if (this.todayTasks.length === 0) {
+        const totalTasks = this.morningTasks.length + this.afternoonTasks.length + this.nightTasks.length;
+        if (totalTasks === 0) {
             alert('No tasks to clear!');
             return;
         }
 
         if (confirm('Move all unfinished tasks back to the to-do list?')) {
-            this.todayTasks.forEach(task => {
-                if (!task.completed) {
-                    this.allTasks.push(task);
-                }
+            // Collect unfinished tasks from all time slots
+            const unfinishedTasks = [
+                ...this.morningTasks.filter(task => !task.completed),
+                ...this.afternoonTasks.filter(task => !task.completed),
+                ...this.nightTasks.filter(task => !task.completed)
+            ];
+
+            // Move unfinished tasks back to main list
+            unfinishedTasks.forEach(task => {
+                task.completed = false; // Reset completion status
+                this.allTasks.push(task);
             });
 
-            this.todayTasks = [];
+            // Clear all today's tasks
+            this.morningTasks = [];
+            this.afternoonTasks = [];
+            this.nightTasks = [];
+            
             this.saveData();
             this.render();
         }
@@ -246,13 +352,18 @@ class DayPlanner {
             return;
         }
 
-        const taskItem = e.target.closest('.task-item');
+        const taskItem = e.target.closest('.task-item, .today-task-item');
         if (!taskItem) return;
 
         taskItem.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('taskId', taskItem.dataset.taskId);
         e.dataTransfer.setData('source', taskItem.dataset.source);
+        
+        // Store the original index for reordering
+        const sourceList = this.getTaskList(taskItem.dataset.source);
+        const taskIndex = sourceList.findIndex(t => t.id == taskItem.dataset.taskId);
+        e.dataTransfer.setData('originalIndex', taskIndex);
     }
 
     handleDragEnd(e) {
@@ -260,20 +371,39 @@ class DayPlanner {
         const interactiveElement = e.target.closest('button, input');
         if (interactiveElement) return;
 
-        const taskItem = e.target.closest('.task-item');
+        const taskItem = e.target.closest('.task-item, .today-task-item');
         if (taskItem) {
             taskItem.classList.remove('dragging');
         }
-        document.getElementById('todayTasks').classList.remove('drag-over');
+        
+        // Remove drag-over class from all containers
+        document.querySelectorAll('.today-tasks-container, .task-list').forEach(container => {
+            container.classList.remove('drag-over');
+        });
     }
 
     handleDragOver(e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
 
-        const todayContainer = document.getElementById('todayTasks');
-        if (e.target === todayContainer || todayContainer.contains(e.target)) {
-            todayContainer.classList.add('drag-over');
+        // Check if hovering over any time slot container or main task list
+        const timeContainer = e.target.closest('.today-tasks-container');
+        const taskList = e.target.closest('.task-list');
+        
+        if (timeContainer) {
+            // Remove drag-over from all containers first
+            document.querySelectorAll('.today-tasks-container, .task-list').forEach(container => {
+                container.classList.remove('drag-over');
+            });
+            // Add to current container
+            timeContainer.classList.add('drag-over');
+        } else if (taskList) {
+            // Remove drag-over from all containers first
+            document.querySelectorAll('.today-tasks-container, .task-list').forEach(container => {
+                container.classList.remove('drag-over');
+            });
+            // Add to task list
+            taskList.classList.add('drag-over');
         }
     }
 
@@ -288,35 +418,72 @@ class DayPlanner {
         e.preventDefault();
         e.stopPropagation();
 
-        const todayContainer = document.getElementById('todayTasks');
-        todayContainer.classList.remove('drag-over');
+        // Remove drag-over class from all containers
+        document.querySelectorAll('.today-tasks-container, .task-list').forEach(container => {
+            container.classList.remove('drag-over');
+        });
 
         const taskId = parseInt(e.dataTransfer.getData('taskId'));
         const source = e.dataTransfer.getData('source');
+        const originalIndex = parseInt(e.dataTransfer.getData('originalIndex'));
 
-        if (!e.target.closest('#todayTasks')) return;
+        // Check which container was dropped into
+        const targetContainer = e.target.closest('.today-tasks-container, .task-list');
+        if (!targetContainer) return;
 
-        this.moveTask(taskId, source);
+        const targetType = targetContainer.dataset.type || 'all';
+        
+        // Check if dropping in the same list (reordering)
+        if (source === targetType) {
+            this.reorderTaskInList(taskId, source, originalIndex, e);
+        } else {
+            // Moving between different lists
+            this.moveTask(taskId, source, targetType);
+        }
     }
 
     // Move task between lists
-    moveTask(taskId, sourceList) {
+    moveTask(taskId, sourceList, targetList = null) {
         let task = null;
+        let sourceArray = null;
 
+        // Find the task in the source list
         if (sourceList === 'all') {
-            task = this.allTasks.find(t => t.id === taskId);
+            sourceArray = this.allTasks;
+        } else if (sourceList === 'morning') {
+            sourceArray = this.morningTasks;
+        } else if (sourceList === 'afternoon') {
+            sourceArray = this.afternoonTasks;
+        } else if (sourceList === 'night') {
+            sourceArray = this.nightTasks;
+        }
+
+        if (sourceArray) {
+            task = sourceArray.find(t => t.id === taskId);
             if (task) {
-                this.allTasks = this.allTasks.filter(t => t.id !== taskId);
-                task.completed = false; // Reset completion when moving
-                this.todayTasks.push(task);
+                // Remove from source
+                sourceArray.splice(sourceArray.indexOf(task), 1);
             }
-        } else if (sourceList === 'today') {
-            task = this.todayTasks.find(t => t.id === taskId);
-            if (task) {
-                this.todayTasks = this.todayTasks.filter(t => t.id !== taskId);
-                task.completed = false; // Reset completion when moving
-                this.allTasks.push(task);
-            }
+        }
+
+        if (!task) return;
+
+        // Determine target list
+        let targetArray = null;
+        if (targetList === 'morning' || (!targetList && sourceList === 'all')) {
+            targetArray = this.morningTasks;
+        } else if (targetList === 'afternoon') {
+            targetArray = this.afternoonTasks;
+        } else if (targetList === 'night') {
+            targetArray = this.nightTasks;
+        } else if (targetList === null && sourceList !== 'all') {
+            // Moving from time slot back to all tasks
+            targetArray = this.allTasks;
+        }
+
+        if (targetArray) {
+            task.completed = false; // Reset completion when moving
+            targetArray.push(task);
         }
 
         this.saveData();
@@ -333,8 +500,9 @@ class DayPlanner {
 
     // Update progress bar for today's tasks
     updateProgress() {
-        const totalTasks = this.todayTasks.length;
-        const completedTasks = this.todayTasks.filter(task => task.completed).length;
+        const allTodayTasks = [...this.morningTasks, ...this.afternoonTasks, ...this.nightTasks];
+        const totalTasks = allTodayTasks.length;
+        const completedTasks = allTodayTasks.filter(task => task.completed).length;
         const percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
         // Update progress bar
@@ -371,6 +539,10 @@ class DayPlanner {
     // Create task item HTML
     createTaskItemHTML(task, source) {
         const completed = task.completed ? 'completed' : '';
+        // const dueSoon = this.isDueSoon(task.deadline) ? 'due-soon' : '';
+        // const overdue = this.isOverdue(task.deadline) ? 'overdue' : '';
+        // const deadlineText = task.deadline ? ` (Due: ${new Date(task.deadline).toLocaleDateString()})` : '';
+        
         return `
             <li class="task-item ${completed}" draggable="true" data-task-id="${task.id}" data-source="${source}" ondragstart="planner.handleDragStart(event)" ondragend="planner.handleDragEnd(event)">
                 <input
@@ -386,18 +558,21 @@ class DayPlanner {
     }
 
     // Create today's task HTML (inner content)
-    createTodayTaskItemHTML(task) {
+    createTodayTaskItemHTML(task, source = 'today') {
         const completed = task.completed ? 'completed' : '';
-        const moveBackButton = task.completed ? '' : `<button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, 'today')" title="Move back to checklist">←</button>`;
+        // const dueSoon = this.isDueSoon(task.deadline) ? 'due-soon' : '';
+        // const overdue = this.isOverdue(task.deadline) ? 'overdue' : '';
+        // const deadlineText = task.deadline ? ` (Due: ${new Date(task.deadline).toLocaleDateString()})` : '';
+        const moveBackButton = task.completed ? '' : `<button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, '${source}')" title="Move back to checklist">←</button>`;
 
         return `
             <input
                 type="checkbox"
                 ${task.completed ? 'checked' : ''}
-                onchange="event.stopPropagation(); planner.toggleTask(${task.id}, 'today')"
+                onchange="event.stopPropagation(); planner.toggleTask(${task.id}, '${source}')"
             >
             <span class="task-text">${this.escapeHtml(task.text)}</span>
-            <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, 'today')" title="Edit task">Edit</button>
+            <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, '${source}')" title="Edit task">Edit</button>
             ${moveBackButton}
         `;
     }
@@ -412,8 +587,11 @@ class DayPlanner {
     // Render the UI
     render() {
         this.renderTaskList();
-        this.renderTodayTasks();
+        this.renderMorningTasks();
+        this.renderAfternoonTasks();
+        this.renderNightTasks();
         this.updateProgress();
+        this.updateCurrentDate();
     }
 
     // Render all tasks list
@@ -433,34 +611,51 @@ class DayPlanner {
         });
     }
 
-    // Render today's tasks
-    renderTodayTasks() {
-        const todayContainer = document.getElementById('todayTasks');
+    // Render morning tasks
+    renderMorningTasks() {
+        this.renderTimeSlotTasks('morningTasks', this.morningTasks, 'morning');
+    }
+
+    // Render afternoon tasks
+    renderAfternoonTasks() {
+        this.renderTimeSlotTasks('afternoonTasks', this.afternoonTasks, 'afternoon');
+    }
+
+    // Render night tasks
+    renderNightTasks() {
+        this.renderTimeSlotTasks('nightTasks', this.nightTasks, 'night');
+    }
+
+    // Helper method to render tasks for a specific time slot
+    renderTimeSlotTasks(containerId, tasks, source) {
+        const container = document.getElementById(containerId);
         
         // Clear previous content
-        while (todayContainer.firstChild) {
-            todayContainer.removeChild(todayContainer.firstChild);
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
         }
 
-        if (this.todayTasks.length === 0) {
+        if (tasks.length === 0) {
             const emptyState = document.createElement('li');
             emptyState.className = 'empty-state';
             emptyState.style.listStyle = 'none';
-            emptyState.textContent = 'Drag tasks here to plan your day';
-            todayContainer.appendChild(emptyState);
+            emptyState.textContent = 'Drag tasks here';
+            container.appendChild(emptyState);
         } else {
-            this.todayTasks.forEach(task => {
+            tasks.forEach(task => {
                 const li = document.createElement('li');
                 const completed = task.completed ? 'completed' : '';
-                li.className = 'today-task-item ' + completed;
+                // const dueSoon = this.isDueSoon(task.deadline) ? 'due-soon' : '';
+                // const overdue = this.isOverdue(task.deadline) ? 'overdue' : '';
+                li.className = `today-task-item ${completed}`;
                 li.draggable = true;
                 li.dataset.taskId = task.id;
-                li.dataset.source = 'today';
+                li.dataset.source = source;
                 li.setAttribute('ondragstart', 'planner.handleDragStart(event)');
                 li.setAttribute('ondragend', 'planner.handleDragEnd(event)');
-                li.innerHTML = this.createTodayTaskItemHTML(task);
+                li.innerHTML = this.createTodayTaskItemHTML(task, source);
                 
-                todayContainer.appendChild(li);
+                container.appendChild(li);
             });
         }
     }

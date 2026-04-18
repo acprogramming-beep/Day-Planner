@@ -47,12 +47,20 @@ A simple, elegant day-planner web application that helps you manage your to-do l
 
 ✨ **Core Features:**
 - **To-Do List Checklist**: Maintain a complete list of all tasks you need to accomplish
-- **Daily Task Planning**: Drag tasks from your to-do list to a dedicated "Today's Tasks" section
-- **Progress Tracking**: Visual progress bar showing completed vs total tasks in "Today's Tasks"
+- **Time-Based Task Organization**: Divide "Today's Tasks" into three time slots: Morning, Afternoon, and Night
+- **Task Reordering**: Drag and drop to reorder tasks within any list
+- **Deadline Management**: Set deadlines for tasks with visual indicators for due dates
+- **Smart Deadline Alerts**: Tasks turn orange when due within 3 days, red when overdue
+- **Daily Task Planning**: Drag tasks from your to-do list to time-specific sections
+- **Progress Tracking**: Visual progress bar showing completed vs total tasks across all time slots
 - **Automatic Daily Reset**: Unfinished tasks automatically move back to checklist at midnight
 - **Persistent Storage**: All tasks are saved automatically using browser localStorage
-- **Daily Reset**: Unfinished tasks automatically return to your to-do list at the start of each day
 - **Task Management**:
+  - Mark tasks as complete with checkboxes
+  - Delete tasks from either list
+  - Edit task text and deadlines
+  - Add new tasks with keyboard (Enter key) or button click
+- **Intuitive Drag & Drop**: Simple click-and-drag interface to move tasks between lists and reorder within lists
 
 ### Getting Started
 1. Access your deployed app URL (e.g., `https://yourusername.github.io/day-planner`)
@@ -97,24 +105,34 @@ Once you open the app once in Safari on iPad, it caches everything locally. You 
 
 ### Adding Tasks
 1. Type a task description in the "Add a new task..." input field
-2. Press Enter or click the "Add" button
-3. The task appears in your To-Do List
+2. **Optional:** Set a deadline using the date picker next to the input field
+3. Press Enter or click the "Add" button
+4. The task appears in your To-Do List
 
 ### Planning Your Day
-1. **Drag tasks** from the left "To-Do List" panel to the right "Today's Tasks" panel
-2. Focus on completing the tasks in "Today's Tasks"
-3. As you finish tasks, check the checkbox to mark them complete
-4. **Watch your progress** with the visual progress bar at the top of "Today's Tasks"
+1. **Drag tasks** from the left "To-Do List" panel to any of the three time slots on the right:
+   - 🌅 **Morning** - Tasks for the morning hours
+   - ☀️ **Afternoon** - Tasks for the afternoon hours  
+   - 🌙 **Night** - Tasks for the evening hours
+2. **Reorder tasks** within any list by dragging them up or down
+3. Focus on completing the tasks in your time slots
+4. As you finish tasks, check the checkbox to mark them complete
+5. **Watch your progress** with the visual progress bar at the top
 
-### Completing Tasks
-- Click the **checkbox** next to any task to mark it as complete
-- Completed tasks appear dimmed with strikethrough text
-- **Move-back button (←) disappears** for completed tasks since they're done
-- You can still uncheck completed tasks to show the move-back button again
+### Deadline Management
+- **Setting Deadlines:** When adding or editing a task, you can set a deadline date
+- **Visual Alerts:** 
+  - Tasks turn **orange** when due within 3 days
+  - Tasks turn **red** when overdue
+- **Deadline Display:** Due dates appear next to task text
 
-### End of Day
-- **Automatic Clearing:** At midnight, unfinished tasks automatically move back to your To-Do List
-- **Manual Clearing:** Click "Clear Today" to manually move unfinished tasks back anytime
+### Task Management
+- **Edit Tasks:** Click the "Edit" button to change task text or deadline
+- **Complete Tasks:** Click the checkbox next to any task to mark it as complete
+- **Delete Tasks:** 
+  - **From "To-Do List":** Click the **Delete** button to remove the task completely
+  - **From Time Slots:** Click the **←** button to move unfinished tasks back to your main checklist
+- **Reorder Tasks:** Drag any task up or down within its list to change priority
 - **Notification:** Get notified when the daily reset occurs (if app is open)
 - **Finished tasks:** These can be deleted from the main checklist if no longer needed
 
@@ -134,10 +152,13 @@ Once you open the app once in Safari on iPad, it caches everything locally. You 
 
 ### How It Works
 - **Storage**: Uses browser localStorage to persist data
-- **Daily Reset**: Automatically detects new days and moves unfinished tasks from "Today's Tasks" back to "To-Do List"
+- **Time-Based Organization**: Tasks can be organized into Morning, Afternoon, and Night time slots
+- **Task Reordering**: Drag and drop tasks to reorder them within any list
+- **Deadline System**: Tasks can have deadlines with visual color coding (orange for due within 3 days, red for overdue)
+- **Daily Reset**: Automatically detects new days and moves unfinished tasks from all time slots back to "To-Do List"
 - **Automatic Clearing**: Runs at exactly midnight every day, even if app is open
-- **Progress Tracking**: Real-time calculation of completion percentage for today's tasks
-- **Drag & Drop**: Uses HTML5 Drag and Drop API for smooth task movement
+- **Progress Tracking**: Real-time calculation of completion percentage across all time slots
+- **Drag & Drop**: Uses HTML5 Drag and Drop API for smooth task movement between lists and reordering within lists
 - **Responsive Design**: Works on desktop and mobile devices
 - **Offline Support**: Service worker caches the app for offline functionality
 - **PWA**: Can be installed on home screen as a standalone app

@@ -28,6 +28,11 @@
                             placeholder="Add a new task..."
                             autocomplete="off"
                         >
+                        <!-- <input
+                            type="date"
+                            id="deadlineInput"
+                            title="Set deadline (optional)"
+                        > -->
                         <button id="addTaskBtn">Add</button>
                     </div>
                     <ul id="taskList" class="task-list"></ul>
@@ -42,9 +47,29 @@
                         </div>
                         <span class="progress-text" id="progressText">0 / 0 tasks</span>
                     </div>
-                    <ul id="todayTasks" class="today-tasks-container" data-type="today"></ul>
-                    <div class="actions">
-                        <button id="clearTodayBtn" class="btn-danger">Clear Today</button>
+                    
+                    <div class="panel-content">
+                        <!-- Morning Tasks -->
+                        <div class="time-section">
+                            <h3>🌅 Morning</h3>
+                            <ul id="morningTasks" class="today-tasks-container time-tasks-container" data-type="morning"></ul>
+                        </div>
+                        
+                        <!-- Afternoon Tasks -->
+                        <div class="time-section">
+                            <h3>☀️ Afternoon</h3>
+                            <ul id="afternoonTasks" class="today-tasks-container time-tasks-container" data-type="afternoon"></ul>
+                        </div>
+                        
+                        <!-- Night Tasks -->
+                        <div class="time-section">
+                            <h3>🌙 Night</h3>
+                            <ul id="nightTasks" class="today-tasks-container time-tasks-container" data-type="night"></ul>
+                        </div>
+                        
+                        <div class="actions">
+                            <button id="clearTodayBtn" class="btn-danger">Clear Today</button>
+                        </div>
                     </div>
                 </section>
             </div>
