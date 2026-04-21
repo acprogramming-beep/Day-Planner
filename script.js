@@ -618,7 +618,28 @@ class DayPlanner {
             return;
         }
 
-        this.allTasks.forEach(task => {
+        // Sort tasks by deadline urgency (most urgent first)
+        const sortedTasks = this.allTasks.slice().sort((a, b) => {
+            // Tasks without deadlines go to the bottom
+            if (!a.deadline && !b.deadline) return 0;
+            if (!a.deadline) return 1;
+            if (!b.deadline) return -1;
+
+            const now = new Date();
+            const aDue = new Date(a.deadline);
+            const bDue = new Date(b.deadline);
+
+            // Overdue tasks first
+            const aOverdue = aDue < now;
+            const bOverdue = bDue < now;
+            if (aOverdue && !bOverdue) return -1;
+            if (!aOverdue && bOverdue) return 1;
+
+            // Then by time until due (closest first)
+            return aDue.getTime() - bDue.getTime();
+        });
+
+        sortedTasks.forEach(task => {
             const li = document.createElement('li');
             li.innerHTML = this.createTaskItemHTML(task, 'all');
             taskList.appendChild(li);
