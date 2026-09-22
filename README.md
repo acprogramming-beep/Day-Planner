@@ -19,7 +19,7 @@ A browser-based day planner for keeping an unscheduled task list, assigning work
 - Add one or more labels when creating or editing a task. Separate labels with commas, for example: `Work, urgent`.
 - Labels appear as tags on tasks and in task history.
 - Each task keeps only one copy of a label, ignoring capitalization differences.
-- Previously used labels are saved locally and appear as suggestions while you enter labels, so they can be reused without retyping.
+- Previously used labels are saved locally as suggestions and tap-to-select chips, so they can be reused without retyping (including on iPad).
 - Filter the unscheduled To-Do List with the label checklist.
   - With no labels checked, all unscheduled tasks are shown.
   - With one or more labels checked, a task appears if it has **at least one** selected label (OR matching).

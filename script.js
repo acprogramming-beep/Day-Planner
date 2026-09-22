@@ -202,6 +202,8 @@ class DayPlanner {
         const taskInput = document.getElementById('taskInput');
         const clearTodayBtn = document.getElementById('clearTodayBtn');
         const labelFilter = document.getElementById('labelFilter');
+        const labelsInput = document.getElementById('labelsInput');
+        const savedLabelPicker = document.getElementById('savedLabelPicker');
         
         // Time slot containers for drag and drop
         const morningContainer = document.getElementById('morningTasks');
@@ -224,6 +226,24 @@ class DayPlanner {
                 this.activeLabelFilters.delete(label);
             }
             this.renderTaskList();
+        });
+        labelsInput.addEventListener('input', () => this.renderSavedLabelPicker());
+        savedLabelPicker.addEventListener('click', (event) => {
+            const labelButton = event.target.closest('button[data-label]');
+            if (!labelButton) return;
+
+            const selectedLabel = labelButton.dataset.label;
+            const labels = this.parseLabels(labelsInput.value);
+            const existingIndex = labels.findIndex(label => label.toLocaleLowerCase() === selectedLabel.toLocaleLowerCase());
+
+            if (existingIndex >= 0) {
+                labels.splice(existingIndex, 1);
+            } else {
+                labels.push(selectedLabel);
+            }
+
+            labelsInput.value = labels.join(', ');
+            this.renderSavedLabelPicker();
         });
 
         // Drag and drop setup (drop zone listeners only)
@@ -699,6 +719,26 @@ class DayPlanner {
                 `).join('')
                 : '<span class="label-filter-empty">Add a label to create filter options.</span>';
         }
+
+        this.renderSavedLabelPicker();
+    }
+
+    // Render a tap-friendly label picker because datalist suggestions are not consistently shown on iOS.
+    renderSavedLabelPicker() {
+        const savedLabelPicker = document.getElementById('savedLabelPicker');
+        const labelsInput = document.getElementById('labelsInput');
+        if (!savedLabelPicker || !labelsInput) return;
+
+        const usedLabels = JSON.parse(localStorage.getItem('usedLabels') || '[]');
+        const selectedLabels = this.parseLabels(labelsInput.value).map(label => label.toLocaleLowerCase());
+
+        savedLabelPicker.innerHTML = usedLabels.length
+            ? usedLabels.map(label => `
+                <button class="saved-label-option ${selectedLabels.includes(label.toLocaleLowerCase()) ? 'selected' : ''}" type="button" data-label="${this.escapeHtml(label)}" aria-pressed="${selectedLabels.includes(label.toLocaleLowerCase())}">
+                    ${this.escapeHtml(label)}
+                </button>
+            `).join('')
+            : '<span class="saved-label-empty">Labels you use will appear here.</span>';
     }
 
     // Render the UI

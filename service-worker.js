@@ -1,12 +1,14 @@
 // Service Worker for Day Planner App
 // Enables offline functionality and caching
 
-const CACHE_NAME = 'day-planner-v1';
+const CACHE_NAME = 'day-planner-v2';
 const FILES_TO_CACHE = [
   './',
   './index.html',
+  './history.html',
   './style.css',
   './script.js',
+  './history.js',
   './manifest.json'
 ];
 

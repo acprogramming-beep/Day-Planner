@@ -321,6 +321,47 @@ main {
     font-weight: 600;
 }
 
+.saved-label-picker {
+    margin-bottom: 14px;
+    color: #555;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.saved-label-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 8px;
+}
+
+.saved-label-option {
+    padding: 4px 9px;
+    border: 1px solid #c9c5f2;
+    border-radius: 999px;
+    background: white;
+    color: #5143a5;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+}
+
+.saved-label-option:hover,
+.saved-label-option.selected {
+    border-color: #667eea;
+    background: #e9e7ff;
+}
+
+.saved-label-option:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+.saved-label-empty {
+    color: #888;
+    font-weight: 400;
+}
+
 .label-filter-options {
     display: flex;
     flex-wrap: wrap;
