@@ -6,6 +6,7 @@ class DayPlanner {
         this.morningTasks = [];
         this.afternoonTasks = [];
         this.nightTasks = [];
+        this.activeLabelFilters = new Set();
         this.currentDate = new Date().toDateString();
         this.init();
     }
@@ -26,6 +27,7 @@ class DayPlanner {
         if (this.currentDate !== today) {
             this.performDailyReset();
             this.currentDate = today;
+            this.saveData();
         }
     }
 
@@ -72,7 +74,8 @@ class DayPlanner {
         this.afternoonTasks = [];
         this.nightTasks = [];
 
-        // Update storage
+        // Update the current date to today (fixes repeated/missed resets)
+        this.currentDate = new Date().toDateString();
         this.saveData();
 
         // Update UI
@@ -198,6 +201,7 @@ class DayPlanner {
         const addBtn = document.getElementById('addTaskBtn');
         const taskInput = document.getElementById('taskInput');
         const clearTodayBtn = document.getElementById('clearTodayBtn');
+        const labelFilter = document.getElementById('labelFilter');
         
         // Time slot containers for drag and drop
         const morningContainer = document.getElementById('morningTasks');
@@ -210,6 +214,17 @@ class DayPlanner {
         });
 
         clearTodayBtn.addEventListener('click', () => this.clearToday());
+        labelFilter.addEventListener('change', (event) => {
+            if (!event.target.matches('input[type="checkbox"]')) return;
+
+            const label = event.target.value;
+            if (event.target.checked) {
+                this.activeLabelFilters.add(label);
+            } else {
+                this.activeLabelFilters.delete(label);
+            }
+            this.renderTaskList();
+        });
 
         // Drag and drop setup (drop zone listeners only)
         document.addEventListener('dragover', (e) => this.handleDragOver(e));
@@ -221,8 +236,10 @@ class DayPlanner {
     addTask() {
         const input = document.getElementById('taskInput');
         const deadlineInput = document.getElementById('deadlineInput');
+        const labelsInput = document.getElementById('labelsInput');
         const text = input.value.trim();
         const deadline = deadlineInput ? deadlineInput.value : null;
+        const labels = this.parseLabels(labelsInput ? labelsInput.value : '');
 
         if (text === '') {
             alert('Please enter a task!');
@@ -234,15 +251,18 @@ class DayPlanner {
             text: text,
             completed: false,
             deadline: deadline || null,
+            labels,
             createdAt: new Date().toISOString()
         };
 
         this.allTasks.push(task);
+        this.saveUsedLabels(labels);
         this.saveData();
         this.render();
 
         input.value = '';
         if (deadlineInput) deadlineInput.value = '';
+        if (labelsInput) labelsInput.value = '';
         input.focus();
     }
 
@@ -292,7 +312,24 @@ class DayPlanner {
         let task = tasks.find(t => t.id === taskId);
 
         if (task) {
-            task.completed = !task.completed;
+            // If marking as completed, record finish date and store in finishedTasks
+            if (!task.completed) {
+                task.completed = true;
+                task.finishedAt = new Date().toISOString();
+                // Save to finishedTasks in localStorage
+                const finishedTasks = JSON.parse(localStorage.getItem('finishedTasks') || '[]');
+                // Keep only the most recent completion record for each task.
+                const previousEntries = finishedTasks.filter(finishedTask => finishedTask.id !== task.id);
+                previousEntries.push({
+                    ...task,
+                    finishedAt: task.finishedAt
+                });
+                localStorage.setItem('finishedTasks', JSON.stringify(previousEntries));
+            } else {
+                // If unchecking, remove finish date
+                task.completed = false;
+                delete task.finishedAt;
+            }
             this.saveData();
             this.render();
         }
@@ -319,6 +356,13 @@ class DayPlanner {
             const newDeadline = prompt('Edit deadline (YYYY-MM-DD) or leave empty:', currentDeadline);
             if (newDeadline !== null) {
                 task.deadline = newDeadline.trim() || null;
+            }
+
+            const currentLabels = (task.labels || []).join(', ');
+            const newLabels = prompt('Edit labels (comma-separated) or leave empty:', currentLabels);
+            if (newLabels !== null) {
+                task.labels = this.parseLabels(newLabels);
+                this.saveUsedLabels(task.labels);
             }
             
             this.saveData();
@@ -449,11 +493,12 @@ class DayPlanner {
 
         const targetType = targetContainer.dataset.type || 'all';
         
-        // Check if dropping in the same list (reordering)
-        if (source === targetType) {
+        // If dropping from a time slot to the main list, treat as unscheduling (not delete)
+        if (targetType === 'all' && source !== 'all') {
+            this.moveTask(taskId, source, 'all');
+        } else if (source === targetType) {
             this.reorderTaskInList(taskId, source, originalIndex, e);
         } else {
-            // Moving between different lists
             this.moveTask(taskId, source, targetType);
         }
     }
@@ -486,13 +531,13 @@ class DayPlanner {
 
         // Determine target list
         let targetArray = null;
-        if (targetList === 'morning' || (!targetList && sourceList === 'all')) {
+        if (targetList === 'morning') {
             targetArray = this.morningTasks;
         } else if (targetList === 'afternoon') {
             targetArray = this.afternoonTasks;
         } else if (targetList === 'night') {
             targetArray = this.nightTasks;
-        } else if (targetList === null && sourceList !== 'all') {
+        } else if (targetList === 'all') {
             // Moving from time slot back to all tasks
             targetArray = this.allTasks;
         }
@@ -565,7 +610,10 @@ class DayPlanner {
                     ${task.completed ? 'checked' : ''}
                     onchange="event.stopPropagation(); planner.toggleTask(${task.id}, '${source}')"
                 >
-                <span class="task-text">${this.escapeHtml(task.text)}${deadlineText}</span>
+                <div class="task-content">
+                    <span class="task-text">${this.escapeHtml(task.text)}${deadlineText}</span>
+                    ${this.createLabelsHTML(task.labels)}
+                </div>
                 <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, '${source}')" title="Edit task">Edit</button>
                 <button class="task-delete" onclick="event.stopPropagation(); planner.deleteTask(${task.id}, '${source}')">Delete</button>
             </li>
@@ -585,7 +633,10 @@ class DayPlanner {
                 ${task.completed ? 'checked' : ''}
                 onchange="event.stopPropagation(); planner.toggleTask(${task.id}, '${source}')"
             >
-            <span class="task-text">${this.escapeHtml(task.text)}${deadlineText}</span>
+            <div class="task-content">
+                <span class="task-text">${this.escapeHtml(task.text)}${deadlineText}</span>
+                ${this.createLabelsHTML(task.labels)}
+            </div>
             <button class="task-edit" onclick="event.stopPropagation(); planner.editTask(${task.id}, '${source}')" title="Edit task">Edit</button>
             ${moveBackButton}
         `;
@@ -598,6 +649,58 @@ class DayPlanner {
         return div.innerHTML;
     }
 
+    // Convert comma-separated labels into a trimmed, unique list.
+    parseLabels(value) {
+        const uniqueLabels = new Map();
+        value.split(',').map(label => label.trim()).filter(Boolean).forEach(label => {
+            if (!uniqueLabels.has(label.toLocaleLowerCase())) {
+                uniqueLabels.set(label.toLocaleLowerCase(), label);
+            }
+        });
+        return [...uniqueLabels.values()];
+    }
+
+    // Remember labels separately so they remain available as suggestions after tasks are removed.
+    saveUsedLabels(labels) {
+        const usedLabels = JSON.parse(localStorage.getItem('usedLabels') || '[]');
+        const uniqueLabels = new Map();
+        [...usedLabels, ...labels].forEach(label => {
+            if (!uniqueLabels.has(label.toLocaleLowerCase())) {
+                uniqueLabels.set(label.toLocaleLowerCase(), label);
+            }
+        });
+        const allLabels = [...uniqueLabels.values()].sort((a, b) => a.localeCompare(b));
+        localStorage.setItem('usedLabels', JSON.stringify(allLabels));
+    }
+
+    createLabelsHTML(labels = []) {
+        if (!labels.length) return '';
+        const labelTags = labels.map(label => `<span class="task-label">${this.escapeHtml(label)}</span>`).join('');
+        return `<span class="task-labels" aria-label="Labels">${labelTags}</span>`;
+    }
+
+    updateLabelSuggestions() {
+        const labelSuggestions = document.getElementById('labelSuggestions');
+        if (!labelSuggestions) return;
+
+        const usedLabels = JSON.parse(localStorage.getItem('usedLabels') || '[]');
+        labelSuggestions.innerHTML = usedLabels
+            .map(label => `<option value="${this.escapeHtml(label)}"></option>`)
+            .join('');
+
+        const labelFilter = document.getElementById('labelFilter');
+        if (labelFilter) {
+            labelFilter.innerHTML = usedLabels.length
+                ? usedLabels.map(label => `
+                    <label class="label-filter-option">
+                        <input type="checkbox" value="${this.escapeHtml(label)}" ${this.activeLabelFilters.has(label) ? 'checked' : ''}>
+                        <span>${this.escapeHtml(label)}</span>
+                    </label>
+                `).join('')
+                : '<span class="label-filter-empty">Add a label to create filter options.</span>';
+        }
+    }
+
     // Render the UI
     render() {
         this.renderTaskList();
@@ -606,6 +709,7 @@ class DayPlanner {
         this.renderNightTasks();
         this.updateProgress();
         this.updateCurrentDate();
+        this.updateLabelSuggestions();
     }
 
     // Render all tasks list
@@ -619,7 +723,17 @@ class DayPlanner {
         }
 
         // Sort tasks by deadline urgency (most urgent first)
-        const sortedTasks = this.allTasks.slice().sort((a, b) => {
+        const selectedLabels = [...this.activeLabelFilters].map(label => label.toLocaleLowerCase());
+        const filteredTasks = selectedLabels.length
+            ? this.allTasks.filter(task => (task.labels || []).some(label => selectedLabels.includes(label.toLocaleLowerCase())))
+            : this.allTasks;
+
+        if (filteredTasks.length === 0) {
+            taskList.innerHTML = '<p class="empty-state">No unscheduled tasks match the selected labels.</p>';
+            return;
+        }
+
+        const sortedTasks = filteredTasks.slice().sort((a, b) => {
             // Tasks without deadlines go to the bottom
             if (!a.deadline && !b.deadline) return 0;
             if (!a.deadline) return 1;

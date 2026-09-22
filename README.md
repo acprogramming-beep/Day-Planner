@@ -1,191 +1,96 @@
-# 📅 Day Planner App
+# Day Planner
 
-A simple, elegant day-planner web application that helps you manage your to-do list and plan your daily tasks with drag-and-drop functionality.
-
-**🔒 Security Note:** This app is designed for personal use. Users can add/edit their own tasks (stored locally in their browser), but only you control the source code and deployment. See the Security section below for details.
-
-## 🔒 Security & Access Control
-
-### Protecting Your App Source Code
-
-**Important:** The app is designed so users can **use** it (add/edit their own tasks), but you control who can **edit** the source code.
-
-#### If You Deployed to GitHub Pages:
-1. **Make Repository Private:**
-   - Go to your repository on GitHub
-   - Settings → Danger Zone → Make private
-   - Only you (and invited collaborators) can see/edit the code
-
-2. **Add Collaborators (Optional):**
-   - Settings → Collaborators → Add people
-   - Set appropriate permissions (read/write/admin)
-
-#### If You Deployed to Netlify/Vercel:
-- **Your account controls everything** - only you can redeploy
-- Others can only access the live site, not edit the source
-- To share editing access: invite them to your Netlify/Vercel account
-
-### User Data Privacy
-- **Tasks are stored locally** in each user's browser (localStorage)
-- **No data is sent to your server** - completely private
-- **Each user sees only their own tasks**
-- **Data stays on their device** - works offline
-
-### What Users Can/Cannot Do
-✅ **Users CAN:**
-- Add, edit, delete their own tasks
-- Use the app on any device
-- Access it offline (after first load)
-
-❌ **Users CANNOT:**
-- Edit your source code
-- See other users' tasks
-- Modify the app functionality
-- Access your deployment settings
+A browser-based day planner for keeping an unscheduled task list, assigning work to today’s schedule, and reviewing completed tasks. It works entirely on the device and can be used offline after its first successful load.
 
 ## Features
 
-✨ **Core Features:**
-- **To-Do List Checklist**: Maintain a complete list of all tasks you need to accomplish
-- **Time-Based Task Organization**: Divide "Today's Tasks" into three time slots: Morning, Afternoon, and Night
-- **Task Reordering**: Drag and drop to reorder tasks within any list
-- **Deadline Management**: Set deadlines for tasks with visual indicators for due dates
-- **Smart Deadline Alerts**: Tasks turn orange when due within 3 days, red when overdue
-- **Daily Task Planning**: Drag tasks from your to-do list to time-specific sections
-- **Progress Tracking**: Visual progress bar showing completed vs total tasks across all time slots
-- **Automatic Daily Reset**: Unfinished tasks automatically move back to checklist at midnight
-- **Persistent Storage**: All tasks are saved automatically using browser localStorage
-- **Task Management**:
-  - Mark tasks as complete with checkboxes
-  - Delete tasks from either list
-  - Edit task text and deadlines
-  - Add new tasks with keyboard (Enter key) or button click
-- **Intuitive Drag & Drop**: Simple click-and-drag interface to move tasks between lists and reorder within lists
+### Task list
 
-### Getting Started
-1. Access your deployed app URL (e.g., `https://yourusername.github.io/day-planner`)
-2. The app will load your saved tasks or start fresh if this is your first time
-3. **For offline use**: Open the app once while online, then it works completely offline
+- Add a task with the **Add** button or by pressing Enter in the task field.
+- Add an optional deadline to a task.
+- Edit a task’s text, deadline, and labels.
+- Delete a task from the unscheduled To-Do List.
+- Mark tasks complete with a checkbox.
+- Drag tasks to reorder them in the unscheduled list.
+- Tasks are sorted by deadline urgency: overdue tasks first, then upcoming deadlines, then tasks without deadlines.
 
-### 📱 Access on iPad (or any Device on Your Network)
+### Labels and filtering
 
-#### **Option 1: Deploy to Cloud (Recommended - No Computer Required!)**
+- Add one or more labels when creating or editing a task. Separate labels with commas, for example: `Work, urgent`.
+- Labels appear as tags on tasks and in task history.
+- Each task keeps only one copy of a label, ignoring capitalization differences.
+- Previously used labels are saved locally and appear as suggestions while you enter labels, so they can be reused without retyping.
+- Filter the unscheduled To-Do List with the label checklist.
+  - With no labels checked, all unscheduled tasks are shown.
+  - With one or more labels checked, a task appears if it has **at least one** selected label (OR matching).
+- Scheduled tasks are not hidden by the unscheduled-list filter.
 
-The app is now a **Progressive Web App (PWA)** that works completely offline. Deploy it for free to access from anywhere:
+### Daily scheduling
 
-**Deploy to GitHub Pages (5 minutes):**
-1. Create a GitHub account at [github.com](https://github.com)
-2. **Create a PRIVATE repository** named `day-planner` (Settings → Danger Zone → Make private)
-3. Upload all files to the repository
-4. Go to **Settings** → **Pages** → Select `main` branch
-5. Access your app at `https://yourusername.github.io/day-planner`
-6. On iPad: bookmark this link and add to home screen!
-7. **Only you can edit the code** - others can only use the live app
+- Plan today’s work in separate **Morning**, **Afternoon**, and **Night** sections.
+- Drag tasks from the unscheduled list into a time section.
+- Drag tasks between time sections or back to the unscheduled list.
+- Reorder tasks within any section using drag and drop.
+- Use the move-back control on an incomplete scheduled task to return it to the unscheduled list.
+- Track the day’s scheduled-task completion with a live progress bar.
+- Use **Clear Today** to clear the schedule; unfinished tasks are returned to the unscheduled list.
 
-**Deploy to Netlify (5 minutes):**
-1. Go to [netlify.com](https://netlify.com)
-2. Drag and drop the folder containing all the files
-3. Get a live URL instantly
-4. On iPad: bookmark and add to home screen!
-5. **Only your Netlify account can redeploy** - others can only use the app
+### Deadlines
 
-**Deploy to Vercel (5 minutes):**
-1. Go to [vercel.com](https://vercel.com)
-2. Connect your GitHub or upload files
-3. Deploy with one click
-4. Access from anywhere!
-5. **Account-based security** - only you can modify deployments
+- Display a task’s due date beside its title.
+- Visually highlight overdue and approaching tasks, including tasks due today, tomorrow, within three days, or within a week.
 
-#### **Option 2: No Deployment - Just Use Offline**
-Once you open the app once in Safari on iPad, it caches everything locally. You can then:
-1. Use it completely offline
-2. Data persists on that device
-3. Add to home screen for quick access
-4. **Completely private** - no one else can access your data
+### Completion history
 
-### Adding Tasks
-1. Type a task description in the "Add a new task..." input field
-2. **Optional:** Set a deadline using the date picker next to the input field
-3. Press Enter or click the "Add" button
-4. The task appears in your To-Do List
+- Completed tasks are saved to the **Task History** page with their completion date and labels.
+- If a task is completed more than once, history retains only its most recent completion record.
+- Use **Clear history** to permanently remove all completed-task records. This does not remove active or scheduled tasks.
 
-### Planning Your Day
-1. **Drag tasks** from the left "To-Do List" panel to any of the three time slots on the right:
-   - 🌅 **Morning** - Tasks for the morning hours
-   - ☀️ **Afternoon** - Tasks for the afternoon hours  
-   - 🌙 **Night** - Tasks for the evening hours
-2. **Reorder tasks** within any list by dragging them up or down
-3. Focus on completing the tasks in your time slots
-4. As you finish tasks, check the checkbox to mark them complete
-5. **Watch your progress** with the visual progress bar at the top
+### Daily reset
 
-### Deadline Management
-- **Setting Deadlines:** When adding or editing a task, you can set a deadline date
-- **Visual Alerts:** 
-  - Tasks turn **orange** when due within 3 days
-  - Tasks turn **red** when overdue
-- **Deadline Display:** Due dates appear next to task text
+- At midnight, unfinished scheduled tasks automatically return to the unscheduled To-Do List.
+- The app also checks periodically for a missed day change while it remains open.
+- A visible notification explains how many unfinished tasks were moved back when the app is open.
 
-### Task Management
-- **Edit Tasks:** Click the "Edit" button to change task text or deadline
-- **Complete Tasks:** Click the checkbox next to any task to mark it as complete
-- **Delete Tasks:** 
-  - **From "To-Do List":** Click the **Delete** button to remove the task completely
-  - **From Time Slots:** Click the **←** button to move unfinished tasks back to your main checklist
-- **Reorder Tasks:** Drag any task up or down within its list to change priority
-- **Notification:** Get notified when the daily reset occurs (if app is open)
-- **Finished tasks:** These can be deleted from the main checklist if no longer needed
+### Navigation and usability
 
-### Deleting Tasks
-- **From "To-Do List":** Click the **Delete** button to remove the task completely
-- **From "Today's Tasks":** Click the **←** button to move unfinished tasks back to your main checklist (button only appears for incomplete tasks)
+- The home and history controls are compact, accessible line icons in the upper-right corner.
+- Layout adapts for desktop and smaller screens.
+- A service worker and web app manifest support offline use and installation as a Progressive Web App (PWA), where supported by the browser.
 
-## Technical Details
+## How to use it
 
-### Files
-- `index.html` - Main HTML structure
-- `style.css` - Styling and responsive design
-- `script.js` - JavaScript logic and functionality
-- `service-worker.js` - Service worker for offline support
-- `manifest.json` - PWA configuration
-- `README.md` - Documentation (this file)
+1. Add a task, optionally choosing a deadline and comma-separated labels.
+2. Reuse a label suggestion when appropriate.
+3. Use the left-side label checklist to focus the unscheduled list.
+4. Drag the tasks you want to do today into Morning, Afternoon, or Night.
+5. Check tasks off as you finish them and review them later from the History icon.
 
-### How It Works
-- **Storage**: Uses browser localStorage to persist data
-- **Time-Based Organization**: Tasks can be organized into Morning, Afternoon, and Night time slots
-- **Task Reordering**: Drag and drop tasks to reorder them within any list
-- **Deadline System**: Tasks can have deadlines with visual color coding (orange for due within 3 days, red for overdue)
-- **Daily Reset**: Automatically detects new days and moves unfinished tasks from all time slots back to "To-Do List"
-- **Automatic Clearing**: Runs at exactly midnight every day, even if app is open
-- **Progress Tracking**: Real-time calculation of completion percentage across all time slots
-- **Drag & Drop**: Uses HTML5 Drag and Drop API for smooth task movement between lists and reordering within lists
-- **Responsive Design**: Works on desktop and mobile devices
-- **Offline Support**: Service worker caches the app for offline functionality
-- **PWA**: Can be installed on home screen as a standalone app
+## Data and privacy
 
-### Browser Compatibility
-- Chrome/Edge: ✅ Full PWA support
-- Firefox: ✅ Full PWA support
-- Safari: ✅ Works as web app (can add to home screen)
-- Mobile browsers: ✅ Touch-friendly (drag functionality may vary)
+The app does not use a server or cloud database. Its data is saved in the browser’s `localStorage` for the site, so it remains on that browser profile and device.
 
-## Tips for Best Use
+| Stored key | Contents |
+| --- | --- |
+| `allTasks` | Unscheduled tasks |
+| `morningTasks`, `afternoonTasks`, `nightTasks` | Scheduled tasks for each time section |
+| `finishedTasks` | Most recent completion record for each completed task |
+| `usedLabels` | Reusable label suggestions |
 
-1. **Review Daily**: Check your day planner each morning to see what needs to be done
-2. **Realistic Goals**: Only drag tasks you can realistically complete today
-3. **Regular Cleanup**: Delete completed tasks to keep your list manageable
-4. **Clear at Day's End**: Use "Clear Today" at the end of your day to reset for tomorrow
+Clearing history removes only `finishedTasks`. Labels remain available for reuse even if the task that first used them is deleted.
 
-## Future Enhancement Ideas
+## Project files
 
-- Recurring tasks
-- Task priorities/categories
-- Time estimates
-- Due dates
-- Export/import tasks
-- Dark mode
-- Cloud sync
+| File | Purpose |
+| --- | --- |
+| `index.html` | Main planner interface |
+| `history.html` | Completed-task history page |
+| `style.css` | Responsive styling |
+| `script.js` | Planner, scheduling, labels, filtering, and storage logic |
+| `history.js` | History rendering and clearing logic |
+| `service-worker.js` | Offline asset caching |
+| `manifest.json` | PWA metadata |
 
----
+## Browser support
 
-**Enjoy organizing your day! 🚀**
+The app uses standard modern browser capabilities: `localStorage`, HTML drag and drop, and service workers. Chrome, Edge, Firefox, and Safari support the core planner; installation and some drag behavior can vary by browser and device.

@@ -37,6 +37,48 @@ header h1 {
     margin-bottom: 10px;
 }
 
+.header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.header-top h1 {
+    margin-bottom: 10px;
+}
+
+.header-icon-link {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    color: inherit;
+    border-radius: 50%;
+}
+
+.header-icon-link:hover,
+.header-icon-link:focus-visible {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.header-icon-link:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+.header-icon-link svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+
 header p {
     font-size: 1.1em;
     opacity: 0.9;
@@ -222,6 +264,7 @@ main {
 
 .input-group {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
     align-items: center;
@@ -236,7 +279,8 @@ main {
     transition: border-color 0.3s;
 }
 
-#deadlineInput {
+#deadlineInput,
+#labelsInput {
     padding: 12px 15px;
     border: 2px solid #ddd;
     border-radius: 8px;
@@ -245,7 +289,11 @@ main {
     min-width: 150px;
 }
 
-#taskInput:focus, #deadlineInput:focus {
+#labelsInput {
+    min-width: 180px;
+}
+
+#taskInput:focus, #deadlineInput:focus, #labelsInput:focus {
     outline: none;
     border-color: #667eea;
 }
@@ -264,6 +312,41 @@ main {
 
 #addTaskBtn:hover {
     background: #764ba2;
+}
+
+.task-filter {
+    margin-bottom: 14px;
+    color: #555;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.label-filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-top: 8px;
+}
+
+.label-filter-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #5143a5;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.label-filter-option input {
+    width: 16px;
+    height: 16px;
+    accent-color: #667eea;
+    cursor: pointer;
+}
+
+.label-filter-empty {
+    color: #888;
+    font-weight: 400;
 }
 
 .task-list {
@@ -306,6 +389,14 @@ main {
 }
 
 .task-item.completed {
+    opacity: 0.7;
+}
+
+.history-date {
+    font-size: 0.95em;
+    color: #888;
+    margin-left: 10px;
+}
     opacity: 0.6;
     background: #f0f0f0;
 }
@@ -384,10 +475,33 @@ main {
 }
 
 .task-text {
-    flex: 1;
+    display: block;
     font-size: 1em;
     color: #333;
     word-break: break-word;
+}
+
+.task-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+}
+
+.task-label {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #e9e7ff;
+    color: #5143a5;
+    font-size: 0.78em;
+    font-weight: 600;
+    line-height: 1.3;
 }
 
 .task-delete {
@@ -543,7 +657,6 @@ main {
 }
 
 .today-task-item .task-text {
-    flex: 1;
     font-size: 0.95em;
 }
 
@@ -572,6 +685,25 @@ main {
 
 .btn-danger:hover {
     background: #ee5a52;
+}
+
+.btn-danger:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+}
+
+.history-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 15px;
+}
+
+.history-heading .btn-danger {
+    width: auto;
+    padding: 8px 12px;
+    font-size: 0.9em;
 }
 
 footer {
