@@ -76,6 +76,7 @@ The app does not use a server or cloud database. Its data is saved in the browse
 | `morningTasks`, `afternoonTasks`, `nightTasks` | Scheduled tasks for each time section |
 | `finishedTasks` | Most recent completion record for each completed task |
 | `usedLabels` | Reusable label suggestions |
+| `plannerDate` | Date used to detect a new day and reset the saved schedule |
 
 Clearing history removes only `finishedTasks`. Labels remain available for reuse even if the task that first used them is deleted.
 

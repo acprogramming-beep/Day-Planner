@@ -7,13 +7,13 @@ class DayPlanner {
         this.afternoonTasks = [];
         this.nightTasks = [];
         this.activeLabelFilters = new Set();
-        this.currentDate = new Date().toDateString();
+        this.currentDate = localStorage.getItem('plannerDate') || new Date().toDateString();
         this.init();
     }
 
     init() {
-        this.checkAndResetDaily();
         this.loadData();
+        this.checkAndResetDaily();
         this.setupEventListeners();
         this.updateCurrentDate();
         this.render();
@@ -194,6 +194,7 @@ class DayPlanner {
         localStorage.setItem('morningTasks', JSON.stringify(this.morningTasks));
         localStorage.setItem('afternoonTasks', JSON.stringify(this.afternoonTasks));
         localStorage.setItem('nightTasks', JSON.stringify(this.nightTasks));
+        localStorage.setItem('plannerDate', this.currentDate);
     }
 
     // Setup all event listeners
