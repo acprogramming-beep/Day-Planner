@@ -26,17 +26,23 @@ class DayPlanner {
         const today = new Date().toDateString();
         if (this.currentDate !== today) {
             this.performDailyReset();
-            this.currentDate = today;
-            this.saveData();
         }
     }
 
     // Setup automatic daily clearing
     setupAutoClear() {
-        // Check every 5 minutes if it's a new day
-        setInterval(() => {
+        // Recheck the date and timer after sleep or a system clock/timezone change.
+        const syncDay = () => {
             this.checkAndResetDaily();
-        }, 5 * 60 * 1000); // 5 minutes
+            this.scheduleMidnightReset();
+        };
+
+        setInterval(syncDay, 60 * 1000);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') syncDay();
+        });
+        window.addEventListener('focus', syncDay);
+        window.addEventListener('pageshow', syncDay);
 
         // Also set up a timeout for exactly when the day changes
         this.scheduleMidnightReset();
@@ -44,6 +50,7 @@ class DayPlanner {
 
     // Schedule a reset at exactly midnight
     scheduleMidnightReset() {
+        clearTimeout(this.midnightResetTimer);
         const now = new Date();
         const midnight = new Date(now);
         midnight.setHours(24, 0, 0, 0); // Next midnight
@@ -51,8 +58,8 @@ class DayPlanner {
         const timeUntilMidnight = midnight.getTime() - now.getTime();
 
         // Set timeout for exactly when the day changes
-        setTimeout(() => {
-            this.performDailyReset();
+        this.midnightResetTimer = setTimeout(() => {
+            this.checkAndResetDaily();
             // Schedule the next midnight reset
             this.scheduleMidnightReset();
         }, timeUntilMidnight);
@@ -60,6 +67,10 @@ class DayPlanner {
 
     // Perform the daily reset (separate from checkAndResetDaily for clarity)
     performDailyReset() {
+        const today = new Date().toDateString();
+        // A delayed midnight callback must not clear a newly planned schedule.
+        if (this.currentDate === today) return;
+
         const allTodayTasks = [...this.morningTasks, ...this.afternoonTasks, ...this.nightTasks];
         const unfinishedTasks = allTodayTasks.filter(task => !task.completed);
 
@@ -75,7 +86,7 @@ class DayPlanner {
         this.nightTasks = [];
 
         // Update the current date to today (fixes repeated/missed resets)
-        this.currentDate = new Date().toDateString();
+        this.currentDate = today;
         this.saveData();
 
         // Update UI

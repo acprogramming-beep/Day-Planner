@@ -48,8 +48,8 @@ A browser-based day planner for keeping an unscheduled task list, assigning work
 
 ### Daily reset
 
-- At midnight, unfinished scheduled tasks automatically return to the unscheduled To-Do List.
-- The app also checks periodically for a missed day change while it remains open.
+- At midnight in the device's local timezone, unfinished scheduled tasks automatically return to the unscheduled To-Do List, once per day.
+- The app checks every minute and when it becomes visible or regains focus. If the browser was suspended at midnight, it catches up when resumed.
 - A visible notification explains how many unfinished tasks were moved back when the app is open.
 
 ### Navigation and usability
@@ -93,5 +93,7 @@ Clearing history removes only `finishedTasks`. Labels remain available for reuse
 | `manifest.json` | PWA metadata |
 
 ## Browser support
+
+To run the daily reset regression checks, open `tests/daily-reset.html` in a browser. Each check should display `PASS`.
 
 The app uses standard modern browser capabilities: `localStorage`, HTML drag and drop, and service workers. Chrome, Edge, Firefox, and Safari support the core planner; installation and some drag behavior can vary by browser and device.

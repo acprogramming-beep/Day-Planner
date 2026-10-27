@@ -1,0 +1,130 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Daily reset regression tests</title>
+<pre id="results">Running...</pre>
+<script src="../script.js"></script>
+<script>
+// Run directly in a browser; no test framework or dependencies required.
+DayPlanner.prototype.init = function () {};
+const NativeDate = Date;
+let now;
+window.Date = class extends NativeDate {
+    constructor(...args) { super(...(args.length ? args : [now])); }
+    static now() { return now; }
+};
+const storage = new Map();
+Object.defineProperty(window, 'localStorage', { value: {
+    getItem: key => storage.get(key) ?? null,
+    setItem: (key, value) => storage.set(key, String(value)),
+    removeItem: key => storage.delete(key)
+} });
+let timers = new Map();
+let nextTimer = 0;
+window.setTimeout = (callback, delay) => {
+    timers.set(++nextTimer, { callback, delay });
+    return nextTimer;
+};
+window.clearTimeout = id => timers.delete(id);
+let interval;
+window.setInterval = callback => { interval = callback; };
+const output = [];
+function assert(condition, message) {
+    if (!condition) throw new Error(message);
+}
+function at(value) { now = new NativeDate(value).getTime(); }
+function plannerFor(value) {
+    at(value);
+    storage.clear();
+    timers.clear();
+    const app = new DayPlanner();
+    app.render = () => {};
+    app.updateProgress = () => {};
+    app.showResetNotification = () => {};
+    return app;
+}
+function test(name, run) {
+    try { run(); output.push('PASS ' + name); }
+    catch (error) { output.push('FAIL ' + name + ': ' + error.message); }
+}
+
+test('Local midnight resets once and preserves history and unscheduled tasks', () => {
+    const app = plannerFor('2026-10-28T23:59:59');
+    app.allTasks = [{ id: 1 }];
+    app.morningTasks = [{ id: 2, completed: false }];
+    app.afternoonTasks = [{ id: 3, completed: true }];
+    app.nightTasks = [{ id: 4, completed: false }];
+    localStorage.setItem('finishedTasks', '[{"id":3}]');
+    app.scheduleMidnightReset();
+    const timer = timers.get(app.midnightResetTimer);
+    assert(timer.delay === 1000, 'Timer must target local midnight');
+    app.checkAndResetDaily();
+    assert(app.morningTasks.length === 1, 'Must not reset before midnight');
+    at('2026-10-29T00:00:00');
+    app.checkAndResetDaily();
+    assert(app.allTasks.map(t => t.id).join() === '1,2,4', 'Return unfinished tasks only');
+    assert(app.morningTasks.length + app.afternoonTasks.length + app.nightTasks.length === 0, 'Clear schedule');
+    assert(localStorage.getItem('plannerDate') === new Date().toDateString(), 'Persist new date');
+    assert(localStorage.getItem('finishedTasks') === '[{"id":3}]', 'Preserve history');
+    app.morningTasks = [{ id: 5 }];
+    timer.callback();
+    app.performDailyReset();
+    assert(app.morningTasks.length === 1, 'Stale callbacks must preserve new schedule');
+});
+
+test('A clock moved backwards does not trigger the old midnight timer', () => {
+    const app = plannerFor('2026-10-28T23:00:00');
+    app.nightTasks = [{ id: 1 }];
+    app.scheduleMidnightReset();
+    const callback = timers.get(app.midnightResetTimer).callback;
+    at('2026-10-28T22:00:00');
+    callback();
+    assert(app.nightTasks.length === 1, 'Same local day must keep schedule');
+    assert(timers.size === 1, 'Only one midnight timer should remain');
+    assert(timers.get(app.midnightResetTimer).delay === 7200000, 'Recalculate midnight');
+});
+
+test('Daytime checks preserve the schedule and replace stale timers', () => {
+    const app = plannerFor('2026-10-28T07:59:59');
+    app.morningTasks = [{ id: 1 }];
+    app.scheduleMidnightReset();
+    at('2026-10-28T08:00:00');
+    app.checkAndResetDaily();
+    app.scheduleMidnightReset();
+    assert(app.morningTasks.length === 1, 'No reset within the same local day');
+    assert(timers.size === 1, 'Replace the previous timer');
+    assert(timers.get(app.midnightResetTimer).delay === 16 * 60 * 60 * 1000, 'Target next local midnight');
+});
+
+test('Startup catches up after several closed days', () => {
+    const app = plannerFor('2026-10-31T09:00:00');
+    app.currentDate = new NativeDate('2026-10-28T12:00:00').toDateString();
+    localStorage.setItem('nightTasks', '[{"id":1,"completed":false}]');
+    app.loadData();
+    app.checkAndResetDaily();
+    app.checkAndResetDaily();
+    assert(app.allTasks.length === 1 && app.nightTasks.length === 0, 'Catch up exactly once');
+});
+
+test('Resume events and periodic checks catch up and rearm one timer', () => {
+    const app = plannerFor('2026-10-28T23:59:00');
+    app.setupAutoClear();
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+    const checks = [
+        () => document.dispatchEvent(new Event('visibilitychange')),
+        () => window.dispatchEvent(new Event('focus')),
+        () => window.dispatchEvent(new Event('pageshow')),
+        () => interval()
+    ];
+    checks.forEach((check, index) => {
+        app.nightTasks = [{ id: index, completed: false }];
+        now = new NativeDate(2026, 9, 29 + index, 9).getTime();
+        check();
+        assert(app.nightTasks.length === 0, 'Resume must reset missed day');
+        assert(app.allTasks.length === index + 1, 'Return each task once');
+        assert(timers.size === 1, 'Keep a single midnight timer');
+    });
+});
+
+document.getElementById('results').textContent = output.join('\n');
+document.title = output.some(line => line.startsWith('FAIL')) ? 'FAIL' : 'PASS';
+</script>
